@@ -41,6 +41,10 @@ Offset = 0x01 (1)
 ...
 ```
 
+## TODO, plans
+- proper readme description
+- specification for multibyte changes
+- adaptive testing (not only exhaustive brute-force)
 
 
 
