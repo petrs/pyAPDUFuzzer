@@ -48,9 +48,8 @@ public class SimpleAPDU {
         // Disable failure on unexpected return status (fuzzing will create many different errors)
         TestAPDU.DISABLE_ALL_FAIL_ON_MATCH = true;
         
-        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST, MASK_NOMODIF_NONE, null);
-        startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", STR_APDU_INS_TEST_INS3A, MASK_NOMODIF_INSLC, null);
-                
+        startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST, MASK_NOMODIF_NONE, null);
+        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", STR_APDU_INS_TEST_INS3A, MASK_NOMODIF_INSLC, null);
     }
     
     static void startFuzzingTemplate(APDUFuzzer fuzzer, CardManager cardMngr, RunConfig runCfg, String testName, String cmdTemplateStr, String cmdTemplateModifMaskStr, ArrayList<TestAPDU> initCommands) throws Exception {

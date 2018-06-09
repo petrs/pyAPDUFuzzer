@@ -94,10 +94,9 @@ public class APDUFuzzer {
                         System.out.println(Util.bytesToHex(testCommand));
                         ResponseAPDU resp = cardMngr.m_channel.transmit(new CommandAPDU(testCommand));
                         System.out.println(Util.bytesToHex(resp.getBytes()));
-                        System.out.println("<<<<");
                         
                         // TODO: utilize timing as side-channel information
-                        System.out.println(String.format("Command time: %d", cardMngr.m_lastTransmitTime));
+                        System.out.println(String.format("<<<< Command time: %d ms", cardMngr.m_lastTransmitTime));
                         
                         // If we reach here, no exception was emitted (or is stored in SW)
                         short resCode = (short) resp.getSW();
