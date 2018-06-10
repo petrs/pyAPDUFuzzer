@@ -1,13 +1,11 @@
 # APDUFuzzer
-A fuzzer for APDU-based smartcard interfaces
-
-A tool for configurable black-box fuzzing of applications running on smartcard. 
+A tool for configurable black-box fuzzing of application running on smartcard and using APDU-based interfaces. APDU stands for Application Protocol Data Unit by ISO7816 standard and is simple packet structure with header (first 5 bytes) and optional custom data (up to 256 bytes). 
 
 Usable for:
 - Discovery of standard bugs (e.g., out-of-bounds array access)
 - Reverse engineering of unknown interface 
+- Verification of expected behaviour against known template during an integration testing 
 
-APDU stands for Application Protocol Data Unit by ISO7816 standard and is simple packet structure with header (first 5 bytes) and optional custom data (up to 256 bytes). 
 
 ## Usage
 See SimpleAPDU.java for example. Fuzzer takes a template APDU command (e.g., 00 a4 04 00 00) together with specificaton which bytes of template shall be modified and which not. The specified bytes are then modified, resulting APDU is send to smartcard and evaluated based on the return data and resulting error code. The results are processed for subsequent human inspection.
