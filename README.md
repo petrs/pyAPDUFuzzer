@@ -10,8 +10,13 @@ Usable for:
 ## Usage
 See SimpleAPDU.java for example. Fuzzer takes a template APDU command (e.g., 00 a4 04 00 00) together with specification which bytes of template shall be modified and which not. The specified bytes are then modified, resulting APDU is sent to the smartcard and evaluated based on the return data and resulting error code. The results are processed for subsequent human inspection.
 
-Typical output:
+The output is of following types:
+- Full execution trace will meta information printed on standard input
+- JSON file with complete input/output results list 
+- TXT file with complete input/output results list 
+- TXT file with results in compact form (human readable)
 
+Typical output of compat form:
 
 ```java
 ########################
