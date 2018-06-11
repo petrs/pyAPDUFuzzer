@@ -13,10 +13,13 @@ public class SimpleAPDU {
     private final static byte APPLET_AID[] = null;
     private static final String STR_APDU_INS_TEST = "0000000000";
     private static final String STR_APDU_INS_TEST_INS3A = "003a000000";
+    private static final String STR_APDU_INS_TEST_INS16 = "0016000000";
+    private static final String STR_APDU_INS_TEST_INS16P101 = "0016010000";
     
             
     private static final String MASK_NOMODIF_NONE = "0101010101"; // Allows for modification of any byte
     private static final String MASK_NOMODIF_INSLC = "0100010100"; // Prevents modification of INS and LC
+    private static final String MASK_NOMODIF_CLAINSP1 = "0000000101"; // Prevents modification of INS and P1
     
             
     public static void main(String[] args) {
@@ -48,7 +51,9 @@ public class SimpleAPDU {
         // Disable failure on unexpected return status (fuzzing will create many different errors)
         TestAPDU.DISABLE_ALL_FAIL_ON_MATCH = true;
         
-        startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST, MASK_NOMODIF_NONE, null);
+        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST, MASK_NOMODIF_NONE, null);
+        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST_INS16, MASK_NOMODIF_INSLC, null);
+        startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST_INS16P101, MASK_NOMODIF_CLAINSP1, null);
         //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", STR_APDU_INS_TEST_INS3A, MASK_NOMODIF_INSLC, null);
     }
     

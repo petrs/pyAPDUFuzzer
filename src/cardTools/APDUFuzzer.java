@@ -36,6 +36,11 @@ public class APDUFuzzer {
         File fileCompact = new File(testOutCompactFN);
         PrintWriter testOutWriterCompact = new PrintWriter(fileCompact);
         System.out.println(String.format("Storing fuzzing output into file %s", file.getAbsolutePath()));
+        String testOutJSON = String.format("%s_%s_run.json", testCase.testName, experimentID);
+        File fileJSON = new File(testOutJSON);
+        PrintWriter testOutWriterJSON = new PrintWriter(fileJSON);
+        System.out.println(String.format("Storing json output into file %s", fileJSON.getAbsolutePath()));
+        testOutWriterJSON.println("{\n");
 
         testOutWriter.println("########################");
         testOutWriterCompact.println("########################");
@@ -52,12 +57,15 @@ public class APDUFuzzer {
         // Run exhaustive fuzzing to modify all bytes
         //
         ArrayList<String> results = new ArrayList<>();
+        ArrayList<TestResult> resultsComplete = new ArrayList<>();
         byte[] testCommand = new byte[testCase.commandTemplate.length];
+        TestResult testRes = new TestResult();
         int position = testCase.commandTemplateStartChangeOffset; // initial start offset to change commands - start with 0
         for (; position < testCase.commandTemplate.length; position++) {
             int numExceptionsDetected = 0;
             if (testCase.commandTemplateModifMask[position] == 1) { // check if modification for given position is required
                 for (int change = 0; change < 256; change++) {
+                    testRes.clear();
                     try {
                         if (position == ISO7816.OFFSET_LC) {
                             testCommand = new byte[change + ISO7816.OFFSET_CDATA];
@@ -88,13 +96,16 @@ public class APDUFuzzer {
                             }
                         }
 
+                        testRes.setInputCmd(testCommand);
+
                         // Send target fuzzing command
                         System.out.println(String.format("FUZZING: %s", Util.bytesToHex(testCommand)));
                         System.out.println(">>>>");
                         System.out.println(Util.bytesToHex(testCommand));
-                        ResponseAPDU resp = cardMngr.m_channel.transmit(new CommandAPDU(testCommand));
+                        //ResponseAPDU resp = cardMngr.m_channel.transmit(new CommandAPDU(testCommand));
+                        ResponseAPDU resp = cardMngr.transmit(new CommandAPDU(testCommand));
                         System.out.println(Util.bytesToHex(resp.getBytes()));
-                        
+
                         // TODO: utilize timing as side-channel information
                         System.out.println(String.format("<<<< Command time: %d ms", cardMngr.m_lastTransmitTime));
                         
@@ -108,6 +119,10 @@ public class APDUFuzzer {
                         } else {
                             msg = "OK (no exception)";
                         }
+                        testRes.outputData = Util.bytesToHex(resp.getData());
+                        testRes.status = resCode;
+                        testRes.statusStr = msg;
+                        
                         int origValue = testCase.commandTemplate[position] & 0xFF;
                         if (change == origValue) {
                             msg += " @ORIGINAL VALUE";
@@ -117,19 +132,32 @@ public class APDUFuzzer {
                         
                     } catch (ISOException e) {
                         System.out.println(String.format("Command time: %d", cardMngr.m_lastTransmitTime));
-                        results.add(String.format("ISOException 0x%x (%s)", e.getReason(), getStatusNameRaw(e.getReason())));
+                        String msg = String.format("ISOException 0x%x (%s)", e.getReason(), getStatusNameRaw(e.getReason()));
+                        results.add(msg);
+                        testRes.statusStr = msg;
                         numExceptionsDetected++;
                     } catch (ArrayIndexOutOfBoundsException e) {
                         System.out.println(String.format("Command time: %d", cardMngr.m_lastTransmitTime));
-                        results.add(String.format("ArrayIndexOutOfBoundsException"));
+                        String msg = String.format("ArrayIndexOutOfBoundsException");
+                        results.add(msg);
+                        testRes.statusStr = msg;
                         numExceptionsDetected++;
                     } catch (Exception e) {
                         System.out.println(String.format("Command time: %d", cardMngr.m_lastTransmitTime));
                         String msg = e.toString();
                         results.add(msg);
+                        testRes.statusStr = msg;
                         numExceptionsDetected++;
                     }
+                    finally {
+                        testRes.opTime = cardMngr.m_lastTransmitTime;
+                    }
+                    
+                    resultsComplete.add(testRes);
+
+                    testOutWriterJSON.println(testRes);
                 }
+
 
                 //
                 // Process results
@@ -174,8 +202,12 @@ public class APDUFuzzer {
         
         testOutWriter.close();
         testOutWriterCompact.close();
+        // Finalize JSON file 
+        testOutWriterJSON.println("}\n");
+        testOutWriterJSON.close();
         Files.copy(new File(testOutFN).toPath(), new File(String.format("%s_run.txt", testCase.testName)).toPath(), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(new File(testOutCompactFN).toPath(), new File(String.format("%s_compactrun.txt", testCase.testName)).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(new File(testOutJSON).toPath(), new File(String.format("%s_run.json", testCase.testName)).toPath(), StandardCopyOption.REPLACE_EXISTING);
         
         //
         // Try to find file with baseline results to compare with
@@ -281,4 +313,5 @@ public class APDUFuzzer {
         
         return "unknown";
     }
+
 }
