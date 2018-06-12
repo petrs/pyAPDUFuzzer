@@ -151,9 +151,7 @@ def print_success(filename=None):
     if output != sys.stdout:
         output.close()
 
-"""
-    Functions for interacting with the card
-"""
+
 def send_apdu(card, apdu_to_send):
     """
         Send an APDU to the card, and hadle errors appropriately
@@ -167,7 +165,7 @@ def send_apdu(card, apdu_to_send):
     except SWException, e:
         # Did we get an unsuccessful attempt?
         logging.info(e)
-    except: KeyBoardInterrupt:
+    except KeyboardInterrupt:
         sys.exit()
     except:
         logging.warn("Oh No! Pyscard crashed...")
