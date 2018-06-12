@@ -1,6 +1,7 @@
 # Native
 import sys
 import logging
+import time
 #logging.basicConfig(level=logging.DEBUG)
 
 # 3rd party (PyScard)
@@ -33,7 +34,7 @@ sw_ins_cla = {}
 """
     Functions to support hash table insertion
 """
-def insert_success(cla, ins, p1, p2, sw1, sw2):
+def insert_success(cla, ins, p1, p2, sw1, sw2, timing):
     """
         Insert a succesful response into our valid list
     """
@@ -46,7 +47,7 @@ def insert_success(cla, ins, p1, p2, sw1, sw2):
                                                              hex(sw1),
                                                              hex(sw2)
                                                              )
-    print "Got Success: %s" % successful_apdu
+    print "Got Success: %s. Timing: %s" % (successful_apdu, timing)
 
 
 def insert_trial(cla, ins, sw1, sw2):
@@ -151,15 +152,22 @@ def print_success(filename=None):
     if output != sys.stdout:
         output.close()
 
-
+"""
+    Functions for interacting with the card
+"""
 def send_apdu(card, apdu_to_send):
     """
         Send an APDU to the card, and hadle errors appropriately
     """
+    timing = -1
     str = "Trying : ", [hex(i) for i in apdu_to_send]
     logging.debug(str)
     try:
+
+        start = time.time()
         (data, sw1, sw2) = card._send_apdu(apdu_to_send)
+        end = time.time()
+        timing = end - start
         errorchain[0]([], sw1, sw2)
 
     except SWException, e:
@@ -174,7 +182,7 @@ def send_apdu(card, apdu_to_send):
     str = "Got : ", data, hex(sw1), hex(sw2)
     logging.debug(str)
 
-    return (data, sw1, sw2)
+    return (data, sw1, sw2, timing)
 
 def fuzzer(card, args=None):
     """
@@ -187,7 +195,7 @@ def fuzzer(card, args=None):
         # CLS INS P1 P2
         apdu_to_send = [cla, 0x00, 0x00, 0x00]
 
-        (data, sw1, sw2) = send_apdu(card, apdu_to_send)
+        (data, sw1, sw2, timing) = send_apdu(card, apdu_to_send)
 
         # unsupported class is 0x6E00
         if (sw1 == 0x6E) and (sw2 == 0x00):
@@ -238,7 +246,7 @@ def fuzzer(card, args=None):
             # Success?
             if sw1 in SUCCESS_LIST:
                 if (sw1, sw2) not in SUCCESS_FAIL:
-                    insert_success(cla, ins, p1, p2, sw1, sw2)
+                    insert_success(cla, ins, p1, p2, sw1, sw2, timing)
 
             # Check to see if the command was "successful" and tweak permissions
             # until we get a 0x9000
