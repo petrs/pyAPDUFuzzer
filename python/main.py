@@ -7,13 +7,11 @@ import time
 import json
 import time
 import binascii
+import argparse
 #logging.basicConfig(level=logging.DEBUG)
 
 # 3rd party (PyScard)
 from smartcard.System import readers
-from smartcard.sw.ISO7816_4ErrorChecker import ISO7816_4ErrorChecker
-from smartcard.sw.ISO7816_8ErrorChecker import ISO7816_8ErrorChecker
-from smartcard.sw.ISO7816_9ErrorChecker import ISO7816_9ErrorChecker
 from smartcard.sw.ErrorCheckingChain import ErrorCheckingChain
 from smartcard.sw.SWExceptions import SWException
 
@@ -22,29 +20,29 @@ import llsmartcard.apdu as APDU
 from llsmartcard.apdu import APDU_STATUS, APPLET
 from llsmartcard.card import SmartCard, CAC
 
-from const import iso7816_codes
+from const import ISO7816CODES
 
 
-INS_START = 0xAB
+INS_START = 0x00
 INS_END = 0xFF
 MODE_TRUST = True
 
-def export_json(fd, cla, ins, p1, p2, len, sw1, sw2, out_data, timing):
+def export_json(fd, cla, ins, p1, p2, length, sw1, sw2, out_data, timing):
     try:
         statuscode = (sw1<<8)+sw2
-        out_status_str =  iso7816_codes[statuscode]
+        out_status_str =  ISO7816CODES[statuscode]
     except:
         out_status_str = "UNKNOWN"
     result = {
-        "in_cla": "%02x" % cla,
-        "in_ins": "%02x" % ins,
-        "in_p1": "%02x" % p1,
-        "in_p2": "%02x" % p2,
+        "in_cla": "{:02x}".format(cla),
+        "in_ins": "{:02x}".format(ins),
+        "in_p1": "{:02x}".format(p1),
+        "in_p2": "{:02x}".format(p2),
         "in_data": "",
-        "in_cmd": "%02x%02x%02x%02x%02x" % (cla, ins, p1, p2, len),
-        "out_status":"%02x%02x" % (sw1, sw2),
+        "in_cmd": "{:02x}{:02x}{:02x}{:02x}{:02x}".format(cla, ins, p1, p2, length),
+        "out_status":"{:02x}{:02x}".format(sw1, sw2),
         "out_status_str": out_status_str,
-        "out_data": "".join(["%02x" % d for d in out_data]),
+        "out_data": "".join(["{:02x}".format(d) for d in out_data]),
         "timing": timing*1000
     }
     print("%s\n" % json.dumps(result, sort_keys=True))
@@ -92,7 +90,7 @@ def send_apdu(card, apdu_to_send):
         end = time.time()
         timing = end - start
 
-    except SWException, e:
+    except SWException as e:
         # Did we get an unsuccessful attempt?
         logging.info(e)
     except KeyboardInterrupt:
@@ -110,7 +108,7 @@ def send_apdu(card, apdu_to_send):
 def fuzzer(card, fd, args=None):
     valid_cla = []
 
-    print "Enumerating valid classes..."
+    print("Enumerating valid classes...")
     for cla in range(0xFF + 1):
         apdu_to_send = [cla, 0x00, 0x00, 0x00]
 
@@ -122,20 +120,19 @@ def fuzzer(card, fd, args=None):
         else:
             valid_cla.append(cla)
 
-    print "Found %d valid command classes: " % len(valid_cla)
+    print("Found %d valid command classes: " % len(valid_cla))
     if len(valid_cla) == 256:
-        print "Class Checking seems to be disabled"
+        print("Class Checking seems to be disabled")
         valid_cla = [0x0B]
     else:
         for cla in valid_cla:
-            print "%s" % hex(cla),
-        print ""
+            print("%s" % hex(cla))
 
-    print "Brute forcing every command for each class..."
+    print("Brute forcing every command for each class...")
     invalid_class = []
     for cla in valid_cla:
         for ins in range(INS_START,INS_END + 1):
-            (sw1, sw2) = fuzz_instruction(cla, ins)
+            (sw1, sw2) = fuzz_instruction(card, fd, cla, ins)
 
             if (sw1,sw2) ==  (0x6E,0x00):
                 invalid_class.append([cla, ins])
@@ -144,11 +141,11 @@ def fuzzer(card, fd, args=None):
     for dat in invalid_class:
         for cla in range(0xFF + 1):
             if cla not in valid_cla:
-                fuzz_instruction(cla,dat[1])
+                fuzz_instruction(card, fd, cla, dat[1])
 
-    print "Done."
+    print("Done.")
 
-def fuzz_instruction(cla, ins):
+def fuzz_instruction(card, fd, cla, ins):
     for p1 in range(0xFF + 1):
         for p2 in range(0xFF + 1):
             apdu_to_send = [cla, ins, p1, p2]
@@ -161,21 +158,15 @@ def fuzz_instruction(cla, ins):
                 return (sw1,sw2)
     return (0,0)
 
-
-if __name__ == "__main__":
+def prefix_fuzzing(fd):
     # get readers
     reader_list = readers()
-    try:
-        os.mkdir("result")
-    except:
-        pass
-    fd = open("result/%s-export.json" % str(time.time()).replace(".",""), "w")
     # Let the user the select a reader
     if len(reader_list) > 1:
-        print "Please select a reader"
+        print("Please select a reader")
         idx = 0
         for r in reader_list:
-            print "  %d - %s"%(idx,r)
+            print("  %d - %s"%(idx,r))
             idx += 1
 
         reader_idx = -1
@@ -186,7 +177,7 @@ if __name__ == "__main__":
     else:
         reader = reader_list[0]
 
-    print "Using: %s" % reader
+    print("Using: %s" % reader)
 
     # create connection
     connection = reader.createConnection()
@@ -194,10 +185,34 @@ if __name__ == "__main__":
 
     # do stuff with CAC
     card = CAC(connection)
-    card.select_nist_piv()
 
     # Call our fuzzer
     try:
         fuzzer(card, fd)
     finally:
         fd.close()
+
+def auto_int(x):
+    return int(x, 0)
+
+def main():
+    global INS_START, INS_END
+    parser = argparse.ArgumentParser(description='Fuzz smartcard api.')
+    parser.add_argument('--start_ins', dest='start_ins', action='store', type=auto_int,
+                        default=0x00, help='Instruction to start fuzzing at')
+    parser.add_argument('--end_ins', dest='end_ins', action='store', type=auto_int,
+                        default=0xff, help='Instruction to stop fuzzing at')
+    parser.add_argument('--output', dest='output_file', action='store', type=str,
+                        default="result/{}-export.json".format(str(time.time()).replace(".","")), help='File to output results to')
+    args = parser.parse_args()
+    INS_START = args.start_ins
+    INS_END = args.end_ins
+    try:
+        os.mkdir("result")
+    except:
+        pass
+    fd = open(args.output_file, "w")
+    prefix_fuzzing(fd)
+
+if __name__ == "__main__":
+    main()

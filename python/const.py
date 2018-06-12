@@ -1,4 +1,4 @@
-iso7816_codes = {
+ISO7816CODES = {
     0x6A84: "SW_FILE_FULL",
     0x6F00: "SW_UNKNOWN",
     0x6E00: "SW_CLA_NOT_SUPPORTED",
@@ -55,6 +55,3 @@ iso7816_codes = {
     0x6700: "WRONG_LENGTH",
     0x6B00: "WRONG_P1P2",
 }
-
-ERR_CLA_NOT_SUPPORTED = -1
-ERR_INS_NOT_SUPPORTED = -2
