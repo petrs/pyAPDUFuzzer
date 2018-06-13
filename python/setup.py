@@ -9,6 +9,7 @@ version = '0.0.1'
 install_requires = [
     'six',
     'llsmartcard-ph4',
+    'psutil',
 ]
 
 afl_extras = [
