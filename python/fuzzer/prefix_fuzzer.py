@@ -86,7 +86,7 @@ class PrefixFuzzer:
 
     def _process_result(self, fuzz_inst, fuzz_obj):
         self.progress += 1
-        if self.progress % 100 == 0:
+        if self.progress % 500 == 0:
             self._print_stats()
         self.file_writer.export_elem_as_json(fuzz_obj)
         if fuzz_inst.follow_expert_rules and self.trust_mode:
@@ -107,8 +107,8 @@ class PrefixFuzzer:
         act_progress = self.progress
         self.progress_history.append((act_time, act_progress))
 
-        if len(self.progress_history) > 10:
-            (last_time, last_progress) = self.progress_history[-10]
+        if len(self.progress_history) > 2:
+            (last_time, last_progress) = self.progress_history[-2]
             average = (act_progress-last_progress) / (act_time - last_time)
         else:
             average ="NaN"
