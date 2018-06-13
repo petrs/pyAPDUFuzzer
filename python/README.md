@@ -30,6 +30,6 @@ cd python
 ../venv/bin/pip install --find-links=. --no-cache .
 
 # Install AFL deps (cython required)
-../venv/bin/pip install --find-links=. --no-cache .[dev]
+../venv/bin/pip install --find-links=. --no-cache .[afl]
 ```
 
