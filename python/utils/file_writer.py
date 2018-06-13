@@ -15,6 +15,7 @@ class FileWriter:
         with self.lock:
             self.fd.write("{}\n".format(data))
             if self.write_count > 1000:
+                self.fd.flush()
                 os.fsync(self.fd)
                 self.write_count = 0
             else:

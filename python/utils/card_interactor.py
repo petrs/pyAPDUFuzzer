@@ -1,21 +1,63 @@
-import logging
-
 import smartcard
+from llsmartcard.card import CAC
+from smartcard.System import readers
 from smartcard.sw.SWExceptions import SWException
 import time
 import sys
 
-from utils.logging import debug, info, warning
+from config import BLACKLIST
+from utils.logging import debug, info, warning, error
 from utils.util import raise_critical_error
 
 
+class CardCrashedException(Exception):
+    pass
+
+
 class CardInteractor:
-    def __init__(self, card):
-        self.card = card
+
+    def __init__(self, card_reader_id):
+        self.card_reader_id = card_reader_id
+        self.card_connection = None
+        self.card = self.get_card()
+
+    def get_card(self):
+        if self.card_connection:
+            self.card_connection.disconnect()
+        reader_list = readers()
+        card_reader = reader_list[self.card_reader_id]
+
+        try:
+            connection = card_reader.createConnection()
+            self.card_connection = connection
+            connection.connect()
+            return CAC(connection)
+
+        except smartcard.Exceptions.NoCardException as ex:
+            raise_critical_error("card.interactor", ex)
+
+    @staticmethod
+    def _is_blacklisted(element):
+        for blcklst in BLACKLIST:
+            ok = False
+            for key in blcklst:
+                if element.inp[key] not in blcklst[key]:
+                    ok = True
+            if not ok:
+                warning('fuzzer', 'Hit a blacklisted paket {}'.format(element.get_inp_data()))
+                return True
+
+        return False
 
     def send_element(self, element):
-        res = self.send_apdu(element.get_inp_data())
-        element.set_output(res[0], res[1], res[2], res[3])
+        if self._is_blacklisted(element):
+            element.misc['error_status'] = 1
+            return element
+        try:
+            res = self.send_apdu(element.get_inp_data())
+            element.set_output(res[0], res[1], res[2], res[3])
+        except CardCrashedException:
+            element.misc['error_status']=1
         return element
 
     def send_apdu(self, data):
@@ -34,7 +76,9 @@ class CardInteractor:
         except KeyboardInterrupt:
             sys.exit()
         except smartcard.Exceptions.CardConnectionException as ex:
-            raise_critical_error("card.interactor", ex)
+            error("card.interactor", "Reconnecting the card because of {}".format(ex))
+            self.card = self.get_card()
+            raise CardCrashedException
         except Exception as e:
             warning("card.interactor","{}:{}".format(type(e), e))
             (data, sw1, sw2) = ([], 0xFF, 0xFF)
