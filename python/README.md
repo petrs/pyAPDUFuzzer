@@ -45,3 +45,25 @@ sudo make install
 ../venv/bin/pip install --find-links=. --no-cache .[afl]
 ```
 
+## AFL fuzzing
+
+Start server sitting on the card:
+
+```
+python main_afl.py --server
+```
+
+
+Testing if the client works:
+
+```
+echo -n '0000' | ../venv/bin/python main_afl.py --client --output yres.json
+cat yres.json
+```
+
+TCP IP forking:
+
+```
+../venv/bin/py-afl-fuzz -m 500 -t 5000 -o result/ -i inputs/ -- ../venv/bin/python main_afl.py
+```
+

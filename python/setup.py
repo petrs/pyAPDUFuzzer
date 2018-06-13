@@ -13,7 +13,7 @@ install_requires = [
 ]
 
 afl_extras = [
-    'python-afl',
+    'python-afl-ph4',
 ]
 
 dev_extras = [
