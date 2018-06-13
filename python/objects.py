@@ -1,14 +1,15 @@
 import copy
 
-from const import ISO7816CODES
+from utils.const import ISO7816CODES
 
 
 class FuzzerInstruction:
 
-    def __init__(self, header=[0x00, 0x00, 0x00, 0x00, 0x00], data=[], mask=[(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]):
+    def __init__(self, header=[0x00, 0x00, 0x00, 0x00, 0x00], data=[], mask=[(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)], follow_expert_rules=True):
         self.header = header
         self.data = data
         self.mask = mask
+        self.follow_expert_rules = follow_expert_rules
 
     def get_test_elements(self, pos):
         elem_mask = self.mask[pos]
@@ -18,13 +19,17 @@ class FuzzerInstruction:
         else:
             return list(range(elem_mask[0], elem_mask[1] + 1))
 
+    def get_follow_expert_rules(self):
+        return self.follow_expert_rules
+
+
     def __str__(self):
         return "Instruction H: {} M: {} D: {}".format(str(self.header), str(self.mask), str(self.data))
 
 
 class FuzzerObject:
 
-    def __init__(self, cla=0x00, ins=0x00, p1=0x00, p2=0x00, dlen=0x00, data=[]):
+    def __init__(self, cla=0x00, ins=0x00, p1=0x00, p2=0x00, dlen=0x00, data=[], follow_expert_rules=True):
         self.inp = {}
         self.out = {}
         self.misc = {}
@@ -41,6 +46,9 @@ class FuzzerObject:
         self.out['data'] = []
 
         self.misc['timing'] = 0
+        self.misc['error_status'] = 0
+
+        self.follow_expert_rules = follow_expert_rules
 
     def set_input(self, cla, ins, p1, p2, dlen=0, data=[]):
         self.inp['cla'] = cla
@@ -59,6 +67,9 @@ class FuzzerObject:
     def get_inp_data(self):
         return [self.inp['cla'], self.inp['ins'], self.inp['p1'], self.inp['p2'], self.inp['dlen']] + self.inp['data']
 
+    def get_status_code(self):
+        return (self.out['sw1'] << 8) + self.out['sw2']
+
     def __str__(self):
         return str(
             [self.inp['cla'], self.inp['ins'], self.inp['p1'], self.inp['p2'], self.inp['dlen']] + self.inp['data'])
@@ -66,7 +77,7 @@ class FuzzerObject:
     def serialize(self):
         ret = {"inp": copy.deepcopy(self.inp), "out": copy.deepcopy(self.out), "misc": copy.deepcopy(self.misc)}
 
-        status_code = (ret["out"]['sw1'] << 8) + ret["out"]['sw2']
+        status_code = self.get_status_code()
 
         try:
             out_status_str = ISO7816CODES[status_code]
