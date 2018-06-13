@@ -1,3 +1,5 @@
+import time
+
 from utils.card_interactor import CardInteractor, CardCrashedException
 from queue import Queue, Empty
 from objects import FuzzerObject, FuzzerInstruction
@@ -19,6 +21,8 @@ class PrefixFuzzer:
         self.file_writer = file_writer
         self.card_interactor = CardInteractor(card_reader)
         self.queue = queue
+        self.progress = 0
+        self.progress_history = [(time.time(), 0)]
 
     def run(self):
         info("fuzzer", "Brute forcing every command for each class...")
@@ -81,6 +85,9 @@ class PrefixFuzzer:
         return valid_cla
 
     def _process_result(self, fuzz_inst, fuzz_obj):
+        self.progress += 1
+        if self.progress % 100 == 0:
+            self._print_stats()
         self.file_writer.export_elem_as_json(fuzz_obj)
         if fuzz_inst.follow_expert_rules and self.trust_mode:
             rules = self._get_expert_rule(fuzz_obj)
@@ -94,3 +101,18 @@ class PrefixFuzzer:
             template = fuzz_obj.get_inp_data()
             ret.append(FuzzerInstruction(header=template[0:5], data=template[5:], mask=mask, follow_expert_rules=False))
         return ret
+
+    def _print_stats(self):
+        act_time = time.time()
+        act_progress = self.progress
+        self.progress_history.append((act_time, act_progress))
+
+        if len(self.progress_history) > 10:
+            (last_time, last_progress) = self.progress_history[-10]
+            average = (act_progress-last_progress) / (act_time - last_time)
+        else:
+            average ="NaN"
+
+        info("fuzzer", "Totaly processed {} in {} seconds. Average Speed for last 1000 Entries: {}".format(self.progress, act_time - self.progress_history[0][0], average))
+
+        pass

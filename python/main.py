@@ -16,9 +16,6 @@ from utils.file_writer import FileWriter
 from utils.util import auto_int, raise_critical_error
 from utils.logging import init_logging, info, error
 
-
-
-
 def main():
     parser = argparse.ArgumentParser(description='Fuzz smartcard api.')
     parser.add_argument('--start_ins', dest='start_ins', action='store', type=auto_int,
@@ -30,7 +27,7 @@ def main():
     parser.add_argument('--no-trust', dest='trust_mode', action='store_false', default=True)
     args = parser.parse_args()
 
-    init_logging(logging.DEBUG)
+    init_logging(logging.INFO)
 
     try:
         os.mkdir("result")
