@@ -9,6 +9,8 @@ def init_logging(log_level, log_path=False):
 
     logging.getLogger("llsmartcard.card").setLevel(logging.ERROR)
     logging.getLogger("fuzzer").setLevel(log_level)
+    logging.getLogger("card.interactor").setLevel(logging.ERROR)
+
 
     if log_path:
         if not os.path.exists(log_path):
@@ -39,5 +41,5 @@ def warning(logger, message):
     _log(logger, message, logging.WARNING)
 
 
-def _error(logger, message):
+def error(logger, message):
     _log(logger, message, logging.ERROR)

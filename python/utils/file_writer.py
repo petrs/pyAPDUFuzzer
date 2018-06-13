@@ -1,3 +1,4 @@
+import os
 import json
 from threading import Lock
 
@@ -14,7 +15,7 @@ class FileWriter:
         with self.lock:
             self.fd.write("{}\n".format(data))
             if self.write_count > 1000:
-                self.fd.fsync()
+                os.fsync(self.fd)
                 self.write_count = 0
             else:
                 self.write_count += 1

@@ -1,7 +1,12 @@
 import logging
+
+import smartcard
 from smartcard.sw.SWExceptions import SWException
 import time
 import sys
+
+from utils.logging import debug, info, warning
+from utils.util import raise_critical_error
 
 
 class CardInteractor:
@@ -16,9 +21,8 @@ class CardInteractor:
     def send_apdu(self, data):
         timing = -1
         stri = "Trying : ", [hex(i) for i in data]
-        logging.debug(stri)
+        debug("card.interactor", stri)
         try:
-
             start = time.time()
             (data, sw1, sw2) = self.card._send_apdu(data)
             end = time.time()
@@ -26,15 +30,16 @@ class CardInteractor:
 
         except SWException as e:
             # Did we get an unsuccessful attempt?
-            logging.info(e)
+            info("card.interactor",e)
         except KeyboardInterrupt:
             sys.exit()
+        except smartcard.Exceptions.CardConnectionException as ex:
+            raise_critical_error("card.interactor", ex)
         except Exception as e:
-            print(e)
-            logging.warn("Oh No! Pyscard crashed...")
+            warning("card.interactor","{}:{}".format(type(e), e))
             (data, sw1, sw2) = ([], 0xFF, 0xFF)
 
         stri = "Got : ", data, hex(sw1), hex(sw2)
-        logging.debug(stri)
+        debug("card.interactor", stri)
 
         return sw1, sw2, data, timing
