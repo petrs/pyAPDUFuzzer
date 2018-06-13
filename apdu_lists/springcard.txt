@@ -1,0 +1,73 @@
+# From SpringCard "APDU interpreter and vendor specific commands"
+
+# Get Data
+ffca(0000|0100|f000|f100|f101|f200|fa00|fc00|ff00|ff01|ff81-ff85)00
+
+# Load Key
+ff8200(00-03|10-13)06(00-ff){6}
+ff8220(00-0f|10_1f)06(00-ff){6}
+
+# General Authenticate
+ff860000050100(00-ff)(60|61)(00-03|20-2f)
+ff860000050100(00-ff)00(00-03|10-13)
+ff860000050100(00-ff)20(00-0f|10-1f)
+
+# Read Binary
+ffb0(00-ff)(00-ff)(01-ff)?
+
+# Update Binary
+ffd6(00-ff)(00-ff)<04|10>(00-ff){L}
+
+# Mifare Classic Read
+fff300(00-ff)(00-ff)
+fff300(00-ff)02(60-61)(00-03|20-2f)(00-ff)?
+fff300(00-ff)0200(00-03|10-13)(00-ff)?
+fff300(00-ff)0220(00-0f|10-1f)(00-ff)?
+fff300(00-ff)06(00-ff){6}(00-ff)?
+
+# Mifare Classic Write
+fff400(00-ff)<(0-f)0>(00-ff){L}
+fff400(00-ff)<(0-f)2>(00-ff){L-2}(60-61)(00-03|20-2f)
+fff400(00-ff)<(0-f)2>(00-ff){L-2}00(00-03|10-13)
+fff400(00-ff)<(0-f)2>(00-ff){L-2}20(00-0f|10-1f)
+fff400(00-ff)<(0-f)6>(00-ff){L}
+
+# Mifare Classic Value
+fff5(c0|c1)(00-ff)04(00000001-7fffffff)
+fff5c2(00-ff)0400000000
+fff5(c0|c1)(00-ff)05(00000001-7fffffff)(00-ff)
+fff5c2(00-ff)0500000000(00-ff)
+fff5(c0|c1)(00-ff)06(00000001-7fffffff)(60-61)(00-03|20-2f)
+fff5(c0|c1)(00-ff)06(00000001-7fffffff)00(00-03|10-13)
+fff5(c0|c1)(00-ff)06(00000001-7fffffff)20(00-0f|10-1f)
+fff5c2(00-ff)0600000000(60-61)(00-03|20-2f)
+fff5c2(00-ff)060000000000(00-03|10-13)
+fff5c2(00-ff)060000000020(00-0f|10-1f)
+fff5(c0|c1)(00-ff)07(00000001-7fffffff)(60-61)(00-03|20-2f)(00-ff)
+fff5(c0|c1)(00-ff)07(00000001-7fffffff)00(00-03|10-13)(00-ff)
+fff5(c0|c1)(00-ff)07(00000001-7fffffff)20(00-0f|10-1f)(00-ff)
+fff5c2(00-ff)0700000000(60-61)(00-03|20-2f)(00-ff)
+fff5c2(00-ff)070000000000(00-03|10-13)(00-ff)
+fff5c2(00-ff)070000000020(00-0f|10-1f)(00-ff)
+fff5(c0|c1)(00-ff)0a(00000001-7fffffff)(00-ff){6}
+fff5c2(00-ff)0a00000000(00-ff){6}
+fff5(c0|c1)(00-ff)0b00000000(00-ff){6}(00-ff)
+fff5c2(00-ff)0b00000000(00-ff){6}(00-ff)
+
+# Contactless Slot
+fffb(0000|0100|1000-1002|2000-2007|DEAD)
+
+# Encapsulate (contactless)
+fffe(00-02|04-05|09-0a|0c|(0-7)f|8(0-4))(0|8)(0-d)(<01-ff>(00-ff){L})?(01-ff)?
+fffe0000(<01-ff>(00-ff){L})?(00-ff)?
+
+# Reader Control
+fff00000<01|03|04>1e(00-05){L-1}
+fff00000031c(00-EA)(00-ff)
+fff00000011c
+
+# Test
+fffd(00-ff)(00-3f)(<01-ff>(00-ff){L})?(00-ff)?
+
+# Configure Calypso Sam
+fffc(0400|0401|0800|0801)00

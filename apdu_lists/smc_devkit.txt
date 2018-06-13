@@ -1,0 +1,32 @@
+# From "Smart Cards: The Developer's Toolkit"
+# Timothy M. Jurgensen, Scott B. Guthery
+
+# Erase Binary
+c00e01010106
+
+# Read Record
+c0b2060414
+
+# Write Record
+c0d206041453616c6c7920477265656e000000000000000000
+
+# Append Record
+c0e200001453616c6c7920477265656e000000000000000000
+
+# Update Record
+c0dc06041453616c6c7920477265656e000000000000000000
+
+# Get Response
+c0c0000014
+
+# Manage Channel
+c070000100
+
+# Enveloppe 
+c0c2000007c0a40000023f00
+
+# Get Data
+c0ca020114
+
+# Put Data
+c0da020101ff
