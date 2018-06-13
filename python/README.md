@@ -64,6 +64,6 @@ cat yres.json
 TCP IP forking:
 
 ```
-../venv/bin/py-afl-fuzz -m 500 -t 5000 -o result/ -i inputs/ -- ../venv/bin/python main_afl.py
+../venv/bin/py-afl-fuzz -m 500 -t 5000 -o result/ -i inputs/ -- ../venv/bin/python main_afl.py --client --output yres.json
 ```
 
