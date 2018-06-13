@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import io
 from setuptools import setup
 from setuptools import find_packages
 
@@ -22,14 +23,18 @@ dev_extras = [
 ]
 
 
-try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
-    long_description = long_description.replace("\r", '')
+# try:
+#     import pypandoc
+#     long_description = pypandoc.convert('README.md', 'rst')
+#     long_description = long_description.replace("\r", '')
+#
+# except(IOError, ImportError):
+#     import io
+#     with io.open('README.md', encoding='utf-8') as f:
+#         long_description = f.read()
 
-except(IOError, ImportError):
-    import io
-    with io.open('README.md', encoding='utf-8') as f:
+
+with io.open('README.md', encoding='utf-8') as f:
         long_description = f.read()
 
 
