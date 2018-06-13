@@ -10,12 +10,15 @@ install_requires = [
     'llsmartcard-ph4',
 ]
 
+afl_extras = [
+    'python-afl',
+]
+
 dev_extras = [
     'pep8',
     'tox',
     'pandoc',
     'pypandoc',
-    'python-afl',
 ]
 
 
@@ -55,5 +58,6 @@ setup(
     install_requires=install_requires,
     extras_require={
         'dev': dev_extras,
+        'afl': afl_extras,
     },
 )
