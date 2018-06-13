@@ -1,4 +1,4 @@
-from utils.card_interactor import CardInteractor
+from utils.card_interactor import CardInteractor, CardCrashedException
 from queue import Queue, Empty
 from objects import FuzzerObject, FuzzerInstruction
 from config import EXPERT_RULES
@@ -8,15 +8,16 @@ from utils.logging import info, warning
 #
 # FuzzerObject(cla=cla, bitmask=[0, 1, 1, 1, 0])
 #
+from utils.util import raise_critical_error
 
 
 class PrefixFuzzer:
-    def __init__(self, card, file_writer, ins_start, ins_end, trust_mode, queue=None):
+    def __init__(self, card_reader, file_writer, ins_start, ins_end, trust_mode, queue=None):
         self.ins_start = ins_start
         self.ins_end = ins_end
         self.trust_mode = trust_mode
         self.file_writer = file_writer
-        self.card_interactor = CardInteractor(card)
+        self.card_interactor = CardInteractor(card_reader)
         self.queue = queue
 
     def run(self):
@@ -60,9 +61,10 @@ class PrefixFuzzer:
         info("fuzzer", "Enumerating valid classes...")
         for cla in range(0xFF + 1):
             apdu_to_send = [cla, 0x00, 0x00, 0x00]
-
-            (sw1, sw2, data, timing) = self.card_interactor.send_apdu(apdu_to_send)
-
+            try:
+                (sw1, sw2, data, timing) = self.card_interactor.send_apdu(apdu_to_send)
+            except CardCrashedException as e:
+                raise_critical_error("card.interactor", e)
             # unsupported class is 0x6E00
             if (sw1 == 0x6E) and (sw2 == 0x00):
                 continue
