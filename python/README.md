@@ -30,6 +30,18 @@ cd python
 ../venv/bin/pip install --find-links=. --no-cache .
 
 # Install AFL deps (cython required)
+# Mac:
+brew install afl-fuzz
+
+# Others:
+cd /tmp
+wget http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz
+tar -xzvf afl-latest.tgz
+cd afl-*
+make
+sudo make install
+
+# Install python dependencies
 ../venv/bin/pip install --find-links=. --no-cache .[afl]
 ```
 
