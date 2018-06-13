@@ -1,15 +1,10 @@
 import time
+from queue import Empty
 
-from utils.card_interactor import CardInteractor, CardCrashedException
-from queue import Queue, Empty
-from objects import FuzzerObject, FuzzerInstruction
 from config import EXPERT_RULES
-
+from objects import FuzzerObject, FuzzerInstruction
+from utils.card_interactor import CardInteractor, CardCrashedException
 from utils.logging import info, warning
-
-#
-# FuzzerObject(cla=cla, bitmask=[0, 1, 1, 1, 0])
-#
 from utils.util import raise_critical_error
 
 
@@ -23,6 +18,7 @@ class PrefixFuzzer:
         self.queue = queue
         self.progress = 0
         self.progress_history = [(time.time(), 0)]
+        self.total_elem_to_tries = 0
 
     def run(self):
         info("fuzzer", "Brute forcing every command for each class...")
@@ -33,6 +29,7 @@ class PrefixFuzzer:
         return self._enummerate_classes()
 
     def add_testcase(self, fuzzer_instruction):
+        self.total_elem_to_tries += fuzzer_instruction.num_of_tries
         info("fuzzer", "Adding Fuzz Object {}".format(str(fuzzer_instruction)))
         self.queue.put(fuzzer_instruction)
 
@@ -61,7 +58,8 @@ class PrefixFuzzer:
 
     def _enummerate_classes(self):
         valid_cla = []
-
+        sw1 = 0
+        sw2 = 0
         info("fuzzer", "Enumerating valid classes...")
         for cla in range(0xFF + 1):
             apdu_to_send = [cla, 0x00, 0x00, 0x00]
@@ -94,7 +92,8 @@ class PrefixFuzzer:
             for rule in rules:
                 self.add_testcase(rule)
 
-    def _get_expert_rule(self, fuzz_obj):
+    @staticmethod
+    def _get_expert_rule(fuzz_obj):
         ret = []
         if fuzz_obj.get_status_code() in EXPERT_RULES:
             mask = EXPERT_RULES[fuzz_obj.get_status_code()]
@@ -111,8 +110,8 @@ class PrefixFuzzer:
             (last_time, last_progress) = self.progress_history[-2]
             average = (act_progress-last_progress) / (act_time - last_time)
         else:
-            average ="NaN"
+            average = 0.00
 
-        info("fuzzer", "Totaly processed {} in {} seconds. Average Speed for last 1000 Entries: {}".format(self.progress, act_time - self.progress_history[0][0], average))
+        info("fuzzer", "Totaly processed {:.2f}% ({}/{}) in {:.2f} seconds. Average Speed for last 1000 Entries: {:.2f}".format((self.progress/self.total_elem_to_tries)*100, self.progress,self.total_elem_to_tries, (act_time - self.progress_history[0][0]), average))
 
         pass

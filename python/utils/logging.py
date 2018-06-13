@@ -3,16 +3,15 @@ from datetime import datetime
 import os
 
 
-def init_logging(log_level, log_path=False):
+def init_logging(log_level, log_path=""):
     logging.basicConfig(level=logging.ERROR, format='%(asctime)s %(name)-15s %(levelname)-8s %(message)s',
                         datefmt='%d.%m.%Y %H:%M')
 
     logging.getLogger("llsmartcard.card").setLevel(logging.ERROR)
     logging.getLogger("fuzzer").setLevel(log_level)
-    logging.getLogger("card.interactor").setLevel(logging.ERROR)
+    logging.getLogger("card.interactor").setLevel(logging.WARNING)
 
-
-    if log_path:
+    if log_path != "":
         if not os.path.exists(log_path):
             os.makedirs(log_path)
 

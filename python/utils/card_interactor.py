@@ -57,11 +57,14 @@ class CardInteractor:
             res = self.send_apdu(element.get_inp_data())
             element.set_output(res[0], res[1], res[2], res[3])
         except CardCrashedException:
-            element.misc['error_status']=1
+            element.misc['error_status'] = 1
         return element
 
+    # noinspection PyProtectedMember
     def send_apdu(self, data):
         timing = -1
+        sw1 = 0x00
+        sw2 = 0x00
         stri = "Trying : ", [hex(i) for i in data]
         debug("card.interactor", stri)
         try:
@@ -72,15 +75,15 @@ class CardInteractor:
 
         except SWException as e:
             # Did we get an unsuccessful attempt?
-            info("card.interactor",e)
+            info("card.interactor", e)
         except KeyboardInterrupt:
             sys.exit()
         except smartcard.Exceptions.CardConnectionException as ex:
-            error("card.interactor", "Reconnecting the card because of {}".format(ex))
+            warning("card.interactor", "Reconnecting the card because of {} while processing {}".format(ex, str(data)))
             self.card = self.get_card()
             raise CardCrashedException
         except Exception as e:
-            warning("card.interactor","{}:{}".format(type(e), e))
+            warning("card.interactor", "{}:{}".format(type(e), e))
             (data, sw1, sw2) = ([], 0xFF, 0xFF)
 
         stri = "Got : ", data, hex(sw1), hex(sw2)
