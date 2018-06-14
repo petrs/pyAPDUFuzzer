@@ -12,8 +12,9 @@ import traceback
 import psutil
 import socket
 from six.moves import input
-from utils.card_interactor import CardInteractor
+from pyhashxx import hashxx
 
+from utils.card_interactor import CardInteractor
 from config import CARD_READER_ID
 from fuzzer.prefix_fuzzer import PrefixFuzzer
 from objects import FuzzerObject
@@ -356,9 +357,9 @@ def client_fuzzer(fd, lfd, args=None, **kwargs):
 
             llog(fd, 'status: %04x timing: %s' % (statuscode, timing))
             if in_afl:
-                afl.trace_buff(bytes([sw1, sw2]))
-                afl.trace_buff(bytes(data))
-                afl.trace_buff(timing)
+                afl.trace_offset(hashxx(bytes([sw1, sw2])))
+                afl.trace_offset(hashxx(timing))
+                afl.trace_offset(hashxx(bytes(data)))
 
     except Exception as e:
         llog(fd, 'Exc: %s\n' % e)
