@@ -6,9 +6,9 @@ from utils.logging import debug
 
 
 class FileWriter:
-    def __init__(self, filename):
+    def __init__(self, filename=None, fd=None):
         self.lock = Lock()
-        self.fd = open(filename, "w")
+        self.fd = open(filename, "w") if filename else fd
         self.write_count = 0
 
     def print_to_file(self, data):
