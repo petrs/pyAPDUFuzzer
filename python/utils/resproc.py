@@ -9,6 +9,12 @@ def load_json(fname=None, fd=None, data=None):
     try:
         res = []
         data = data if data else fd.read()
+
+        for i, x in enumerate(data):
+            if x != '\x00':
+                data = data[i:]
+                break
+
         lines = data.split('\n')
         for line in lines:
             line = line.strip()
