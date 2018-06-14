@@ -40,9 +40,65 @@ INS_END = 0xFF
 MODE_TRUST = True
 
 
-TCP_IP = '127.0.0.1'
-TCP_PORT = 5005
+FD = None
+SOCK_IP = '127.0.0.1'
+SOCK_PORT = 5005
+SOCK_TYPE = socket.SOCK_DGRAM  # SOCK_STREAM
 BUFFER_SIZE = 1024
+
+
+class SockComm(object):
+    def __init__(self, server=True):
+        self.server = server
+        self.s = None
+        self.conn = None
+        self.addr = None
+
+    def start(self):
+        self.s = socket.socket(socket.AF_INET, SOCK_TYPE)
+        self.s.bind((SOCK_IP, SOCK_PORT))
+
+        if SOCK_TYPE == socket.SOCK_STREAM:
+            self.s.listen(1)
+
+    def connect(self):
+        if SOCK_TYPE == socket.SOCK_STREAM:
+            self.s = socket.socket(socket.AF_INET, SOCK_TYPE)
+            self.s.connect((SOCK_IP, SOCK_PORT))
+        else:
+            self.s = socket.socket(socket.AF_INET, SOCK_TYPE)
+            self.addr = (SOCK_IP, SOCK_PORT)
+
+    def accept(self):
+        if SOCK_TYPE == socket.SOCK_STREAM:
+            self.conn, self.addr = self.s.accept()
+        else:
+            return
+
+    def read(self):
+        if SOCK_TYPE == socket.SOCK_STREAM:
+            return self.conn.recv(BUFFER_SIZE)
+        else:
+            data, self.addr = self.s.recvfrom(BUFFER_SIZE)
+            return data
+
+    def send(self, buff):
+        if SOCK_TYPE == socket.SOCK_STREAM:
+            return self.conn.send(buff)
+        else:
+            return self.s.sendto(buff, self.addr)
+
+    def close(self):
+        if SOCK_TYPE == socket.SOCK_STREAM:
+            self.s.close()
+
+    def close_conn(self):
+        if SOCK_TYPE == socket.SOCK_STREAM:
+            if self.conn:
+                self.conn.close()
+
+    def __repr__(self):
+        return '<Socket type:%s, s:%s, conn:%s, addr:%s>' % (SOCK_TYPE, self.s, self.conn, self.addr)
 
 
 try:
@@ -53,9 +109,16 @@ except AttributeError:
     stdin_compat = sys.stdin
 
 
-def llog(fd, msg):
+def llog(fd=None, msg=None):
+    if fd is None:
+        fd = FD
     fd.write('%s:%s: %s\n' % (int(time.time() * 1000), psutil.Process().pid, msg))
     fd.flush()
+
+
+def gen_input(len=4):
+    with open('inputs/zeros_fix.bin', 'wb') as fh:
+        fh.write(bytes([0]*len))
 
 
 def form_buffer(buffer):
@@ -82,9 +145,9 @@ def server_fuzzer(fd, lfd, args=None, **kwargs):
     :param args:
     :return:
     """
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((TCP_IP, TCP_PORT))
-    s.listen(1)
+    s = SockComm()
+    s.start()
+
     llog(fd, 'Server mode...')
 
     if not args.dry:
@@ -93,19 +156,19 @@ def server_fuzzer(fd, lfd, args=None, **kwargs):
 
     fwd = FileWriter(fd=lfd)
     while True:
-        conn, addr = s.accept()
-        llog(fd, 'conn: %s, addr: %s' % (conn, addr))
+        s.accept()
+        llog(fd, 'conn: %s' % s)
 
         try:
             while True:
-                data = conn.recv(BUFFER_SIZE)
+                data = s.read()
                 if len(data) == 0:
                     break
 
                 data = data[1:]
                 buffer = data
                 if buffer is None:
-                    conn.send(bytes([0xff]))
+                    s.send(bytes([0xff]))
                     continue
 
                 llog(fd, 'init4, buffer: %s' % binascii.hexlify(bytes(buffer)))
@@ -140,18 +203,82 @@ def server_fuzzer(fd, lfd, args=None, **kwargs):
                 resp_data = bytes([0, sw1, sw2]) + bytes(time_bin.to_bytes(2, 'big')) + bytes(out)
                 llog(fd, 'resp_data: %s' % binascii.hexlify(resp_data))
 
-                conn.send(resp_data)
+                s.send(resp_data)
 
         except KeyboardInterrupt:
             break
 
-        conn.close()
+        s.close_conn()
 
 
-def csock():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # pre-fork connection
-    s.connect((TCP_IP, TCP_PORT))
-    return s
+class Templater(object):
+    def __init__(self, args):
+        self.inp_len = args.fix_len
+        self.sample_len = self.inp_len
+        self.inp_len_b = self.inp_len or 0
+        self.inp_len_s = self.inp_len or 0
+        self.gen_h_len = None
+        self.tpl_b = None
+        self.mask_b = None
+
+        if args.tpl:
+            self.tpl_b = binascii.unhexlify(args.tpl)
+            self.mask_b = binascii.unhexlify(args.mask)
+            if len(self.tpl_b) != len(self.mask_b):
+                raise ValueError('Invalid mask / tpl')
+
+            self.gen_h_len = sum([1 for i, x in enumerate(self.mask_b) if x > 0 and i < 4])
+            self.inp_len = sum([1 for x in self.mask_b if x > 0])  # FF00 = generate first byte randomly, second is fix from the tpl
+
+            if args.fix_len_b:
+                self.sample_len = args.fix_len_b + self.gen_h_len
+                self.inp_len_b = args.fix_len_b
+                self.inp_len_s = args.fix_len_s
+
+            if args.fix_len:
+                raise ValueError('Fix len is auto-determined from the mask')
+
+    def gen_inputs(self):
+        gen_input(self.sample_len)  # 4-bytes by default
+
+    def transform(self, fuzz):
+        ln = len(fuzz)
+
+        # Length check
+        if self.inp_len_b:
+            if ln - self.gen_h_len > self.inp_len_s:
+                return None
+            if ln - self.gen_h_len < self.inp_len_b:
+                return None
+        elif self.inp_len:
+            if ln - self.gen_h_len != self.inp_len:
+                return None
+
+        # Payload building from mask & template if applicable
+        if self.tpl_b:
+            res = []
+            c = 0
+            mask_len = len(self.mask_b)
+            rng = 5 + min(ln - self.gen_h_len, self.inp_len_s)
+            if rng == 5:
+                rng = 4
+
+            for i in range(rng):
+                if i == 4:  # length
+                    res.append(ln - self.gen_h_len)  # payload length = fuzz buffer - fuzzed header fields
+                elif i >= mask_len or self.mask_b[i]:  # randomly if mask is too short or specified by the mask to be random
+                    res.append(fuzz[c])
+                    c += 1
+                else:
+                    res.append(self.tpl_b[i])  # should exist in template
+
+            return bytearray(res)
+
+        # Simple payload gen, length fixing
+        return form_buffer(fuzz)
+
+    def __repr__(self):
+        return '<Templater: %s>' % self.__dict__
 
 
 def client_fuzzer(fd, lfd, args=None, **kwargs):
@@ -171,22 +298,30 @@ def client_fuzzer(fd, lfd, args=None, **kwargs):
     sys.settrace(None)
     llog(fd, 'init2, in afl: %s' % in_afl)
 
+    # Argument processing
+    tpler = Templater(args)
+    llog(fd, 'templater: %s' % tpler)
+
+    # by default, start with 4byte input - fuzz instruction with empty data
+    tpler.gen_inputs()
+
     # Call our fuzzer
     try:
-        # s = csock()  # pre-fork connection
+        # s = csock()  # Pre-fork connection. needs more sophisticated reconnect if socket is broken.
         while afl.loop(3):
             sys.settrace(None)
-            s = csock()
-
             buffer = stdin_compat.read()
-            buffer = form_buffer(buffer)
+            buffer = tpler.transform(buffer)
             if buffer is None:
                 continue
 
             llog(fd, 'init4, buffer: %s' % binascii.hexlify(bytes(buffer)))
+
+            s = SockComm(server=False)
+            s.connect()
             s.send(bytes([0]) + bytes(buffer))
 
-            resp = s.recv(BUFFER_SIZE)
+            resp = s.read()
             llog(fd, 'Recv: %s' % binascii.hexlify(resp))
             if resp[0] != 0:
                 llog(fd, 'Invalid response code: %s' % resp[0])
@@ -297,7 +432,7 @@ def auto_int(x):
 
 
 def main():
-    global INS_START, INS_END
+    global INS_START, INS_END, FD
     parser = argparse.ArgumentParser(description='Fuzz smartcard api.')
     parser.add_argument('--start_ins', dest='start_ins', action='store', type=auto_int,
                         default=0x00, help='Instruction to start fuzzing at')
@@ -316,6 +451,18 @@ def main():
     parser.add_argument('--dry', dest='dry', default=False, action='store_const', const=True,
                         help='dry run - no card comm')
 
+    parser.add_argument('--payload-len', dest='fix_len', default=None, type=int,
+                        help='Fixed length of the payload in bytes')
+    parser.add_argument('--payload-len-b', dest='fix_len_b', default=None, type=int,
+                        help='Payload length start')
+    parser.add_argument('--payload-len-s', dest='fix_len_s', default=None, type=int,
+                        help='Payload length stop')
+
+    parser.add_argument('--tpl', default=None,
+                        help='Template for the message. First 4 bytes are the header.')
+    parser.add_argument('--mask', default=None,
+                        help='Mask for the template')
+
     args = parser.parse_args()
     INS_START = args.start_ins
     INS_END = args.end_ins
@@ -325,7 +472,8 @@ def main():
         os.mkdir("result")
     except:
         pass
-    fd = open(args.log_file, "w")
+
+    FD = fd = open(args.log_file, "w")
     lfd = open(args.output_file, "w")
 
     llog(fd, 'init0')
