@@ -102,13 +102,16 @@ Communication between server/client:
 Client then takes response from the socket, and uses modified [python-afl-ph4] to add trace to the shared memory segment
 that is later analyzed by AFL to determine whether this fuzz input lead to different execution trace than the previous one.
 
-Currently the trace bitmap is done in the following way
+Currently the trace bitmap is done in the following way:
 
 ```python
-afl.trace_buff(status)
-afl.trace_buff(data)
-afl.trace_buff(timing_bin_10ms)
+afl.trace_offset(hashxx(bytes([sw1, sw2])))
+afl.trace_offset(hashxx(timing))
+afl.trace_offset(hashxx(bytes(data)))
 ```
+
+Fowler-Noll-Vo hash function used in `afl.trace_buff` is not very good with respect to the zero buffers. The timing
+was usually not affecting the bitmap so we switched to very fast hash function `hashxx` for the offset computation.
 
 ### Running
 
