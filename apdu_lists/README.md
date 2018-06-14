@@ -17,13 +17,14 @@ The collected APDU commands may be written:
 * with regular expressions
 
 If so, the used format has a lot in common with the POSIX one:
-* __(__ and __)__ are delimiters to oser operators
+* __(__ and __)__ are delimiters to other operators
+* __[__ and __]__ brackets match a single character they contain, with __-__ defining a range
 * __|__ allows the choice between 2 or more options
 * __?__ matches the preceding element zero or one time
 * __{n}__ matches the preceding element exactly _n_ times
 
-In addition, the characters __<__ and __>__ are also used as delimiters (like 
-__(__ and __)__ characters) but they also define a temporary variable __L__.
+In addition, the characters __<__ and __>__ have the same properties as the brackets __[__ and __]__, 
+but they also define a temporary variable __L__.
 
 For example, the regex:
 ```
@@ -43,7 +44,7 @@ regex representing the *Select* command from the ISO 7816-4 specification:
 
 ```
 # Select
-(00-1f|80-9f|40-7f|c0-ff)a4(00-04|08|09)(00-0f)(<01-ff>(00-ff){L})?(01-ff)?
+([00-1f]|[80-9f]|[40-7f]|[c0-ff])a4([00-04]|08|09)[00-0f](<01-ff>[00-ff]{L})?[01-ff]?
 ```
 
 This regex matches the APDU command: "c0 a4 08 00 04 11223344 23" (without spaces).
