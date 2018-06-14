@@ -1,4 +1,5 @@
 import time
+import os
 from queue import Empty
 
 from config import EXPERT_RULES
@@ -88,17 +89,19 @@ class PrefixFuzzer:
             self._print_stats()
         self.file_writer.export_elem_as_json(fuzz_obj)
         if fuzz_inst.follow_expert_rules and self.trust_mode:
-            rules = self._get_expert_rule(fuzz_obj)
+            rules = self._get_expert_rule(fuzz_inst, fuzz_obj)
             for rule in rules:
                 self.add_testcase(rule)
 
     @staticmethod
-    def _get_expert_rule(fuzz_obj):
+    def _get_expert_rule(fuzz_inst, fuzz_obj):
         ret = []
-        if fuzz_obj.get_status_code() in EXPERT_RULES:
+        status_code = fuzz_obj.get_status_code()
+        if status_code in EXPERT_RULES and status_code not in fuzz_inst.expert_rules and fuzz_obj.misc["error_status"] == 0:
             mask = EXPERT_RULES[fuzz_obj.get_status_code()]
             template = fuzz_obj.get_inp_data()
-            ret.append(FuzzerInstruction(header=template[0:5], data=template[5:], mask=mask, follow_expert_rules=False))
+            expert_rules = fuzz_inst.expert_rules + [fuzz_obj.get_status_code()]
+            ret.append(FuzzerInstruction(header=template[0:5], data=template[5:], mask=mask, expert_rules=expert_rules))
         return ret
 
     def _print_stats(self):
@@ -114,4 +117,3 @@ class PrefixFuzzer:
 
         info("fuzzer", "Totaly processed {:.2f}% ({}/{}) in {:.2f} seconds. Average Speed for last 1000 Entries: {:.2f}".format((self.progress/self.total_elem_to_tries)*100, self.progress,self.total_elem_to_tries, (act_time - self.progress_history[0][0]), average))
 
-        pass

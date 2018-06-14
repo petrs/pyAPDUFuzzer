@@ -5,7 +5,9 @@ from utils.const import ISO7816CODES
 
 class FuzzerInstruction:
 
-    def __init__(self, header=None, data=None, mask=None, follow_expert_rules=True):
+    def __init__(self, header=None, data=None, mask=None, follow_expert_rules=True, expert_rules=None):
+        if expert_rules is None:
+            expert_rules = []
         if data is None:
             data = []
         if mask is None:
@@ -16,9 +18,12 @@ class FuzzerInstruction:
         self.data = data
         self.mask = mask
         self.num_of_tries = 1
+
         for a in mask:
             if (a[1]-a[0]) > 0:
                 self.num_of_tries *= a[1]-a[0]
+
+        self.expert_rules = expert_rules
         self.follow_expert_rules = follow_expert_rules
 
     def get_test_elements(self, pos):

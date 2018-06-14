@@ -68,11 +68,11 @@ class CardInteractor:
         stri = "Trying : ", [hex(i) for i in data]
         debug("card.interactor", stri)
         try:
+
             start = time.time()
             (data, sw1, sw2) = self.card._send_apdu(data)
             end = time.time()
             timing = end - start
-
         except SWException as e:
             # Did we get an unsuccessful attempt?
             info("card.interactor", e)

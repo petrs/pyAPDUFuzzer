@@ -37,8 +37,8 @@ def main():
                                  ins_end=args.end_ins, trust_mode=args.trust_mode, queue=Queue())
 
     valid_classes = prefix_fuzzer.get_classes()
-    # valid_classes = [0x0B]
-
+    #valid_classes = [0x0B]
+    #valid_classes = []
     for cla in valid_classes:
         header = [cla, 0x00, 0x00, 0x00, 0x00]
         mask = [(0, 0), (args.start_ins, args.end_ins), (0, 0), (0, 0), (0, 0)]
