@@ -117,8 +117,20 @@ def llog(fd=None, msg=None):
 
 
 def gen_input(len=4):
-    with open('inputs/zeros_fix.bin', 'wb') as fh:
+    with open('inputs/zeros_%04d.bin' % len, 'wb') as fh:
         fh.write(bytes([0]*len))
+
+
+def purge_inputs():
+    folder = 'inputs'
+    for the_file in os.listdir(folder):
+        file_path = os.path.join(folder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            # elif os.path.isdir(file_path): shutil.rmtree(file_path)
+        except Exception as e:
+            print(e)
 
 
 def form_buffer(buffer):
@@ -243,7 +255,12 @@ class Templater(object):
                 raise ValueError('Fix len is auto-determined from the mask')
 
     def gen_inputs(self):
-        gen_input(self.sample_len)  # 4-bytes by default
+        purge_inputs()
+        if self.inp_len_b == self.inp_len_s:
+            gen_input(self.sample_len)  # 4-bytes by default
+        else:
+            for i in range(self.inp_len_b, self.inp_len_s + 1):
+                gen_input(self.gen_h_len + i)  # 4-bytes by default
 
     def transform(self, fuzz):
         ln = len(fuzz)
