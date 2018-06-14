@@ -10,6 +10,7 @@ install_requires = [
     'six',
     'llsmartcard-ph4',
     'psutil',
+    'pyhashxx',
 ]
 
 afl_extras = [
