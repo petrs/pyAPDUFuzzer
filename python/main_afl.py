@@ -70,7 +70,7 @@ def form_buffer(buffer):
     return buffer
 
 
-def server_fuzzer(fd, lfd):
+def server_fuzzer(fd, lfd, args=None, **kwargs):
     """
     Server fuzzer directly connected to the card.
     PCSC does not like forking which AFL does.
@@ -78,6 +78,8 @@ def server_fuzzer(fd, lfd):
     Over the TCP/IP channel we get 40-90 rps (card is the bottleneck now).
 
     :param fd:
+    :param lfd:
+    :param args:
     :return:
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -85,62 +87,81 @@ def server_fuzzer(fd, lfd):
     s.listen(1)
     llog(fd, 'Server mode...')
 
-    card_interactor = CardInteractor(CARD_READER_ID)
+    if not args.dry:
+        card_interactor = CardInteractor(CARD_READER_ID)
+        llog(fd, 'reader: %s' % (card_interactor,))
+
     fwd = FileWriter(fd=lfd)
-
-    llog(fd, 'reader: %s' % (card_interactor, ))
-
     while True:
         conn, addr = s.accept()
         llog(fd, 'conn: %s, addr: %s' % (conn, addr))
 
-        while True:
-            data = conn.recv(BUFFER_SIZE)
-            if len(data) == 0:
-                break
+        try:
+            while True:
+                data = conn.recv(BUFFER_SIZE)
+                if len(data) == 0:
+                    break
 
-            data = data[1:]
-            buffer = data
-            if buffer is None:
-                conn.send(bytes([0xff]))
-                continue
+                data = data[1:]
+                buffer = data
+                if buffer is None:
+                    conn.send(bytes([0xff]))
+                    continue
 
-            llog(fd, 'init4, buffer: %s' % binascii.hexlify(bytes(buffer)))
+                llog(fd, 'init4, buffer: %s' % binascii.hexlify(bytes(buffer)))
 
-            # data, sw1, sw2, timing = send_apdu(card, buffer, fd)
-            # data, sw1, sw2, timing = b'', 0, 0, b'0000'  # integration bechmark
+                # data, sw1, sw2, timing = send_apdu(card, buffer, fd)
+                # data, sw1, sw2, timing = b'', 0, 0, b'0000'  # integration bechmark
 
-            ln = int(buffer[4]) if len(buffer) >= 5 else 0
-            test_elem = FuzzerObject(int(buffer[0]), int(buffer[1]), int(buffer[2]),
-                                     int(buffer[3]), ln, list(bytearray(buffer[5:])))
-            elem = card_interactor.send_element(test_elem)
-            sw1 = test_elem.out['sw1']
-            sw2 = test_elem.out['sw2']
-            out = test_elem.out['data']
+                ln = int(buffer[4]) if len(buffer) >= 5 else 0
+                test_elem = FuzzerObject(int(buffer[0]), int(buffer[1]), int(buffer[2]),
+                                         int(buffer[3]), ln, list(bytearray(buffer[5:])))
+                elem = test_elem
+                if args.dry:
+                    elem = test_elem
+                    sw1 = 0
+                    sw2 = 0
+                    out = bytes()
+                else:
+                    elem = card_interactor.send_element(test_elem)
+                    sw1 = elem.out['sw1']
+                    sw2 = elem.out['sw2']
+                    out = elem.out['data']
 
-            statuscode = (sw1 << 8) + sw2
-            time_bin = int(test_elem.misc['timing'] // 10)
-            if time_bin < 0:
-                time_bin = 0
+                statuscode = (sw1 << 8) + sw2
+                time_bin = int(test_elem.misc['timing'] // 10)
+                if time_bin < 0:
+                    time_bin = 0
 
-            serialized_element = elem.serialize()
-            fwd.print_to_file("%s" % json.dumps(serialized_element))
+                serialized_element = elem.serialize()
+                fwd.print_to_file("%s" % json.dumps(serialized_element))
 
-            llog(fd, 'status: %04x timing: %s' % (statuscode, time_bin))
-            resp_data = bytes([0, sw1, sw2]) + bytes(time_bin.to_bytes(2, 'big')) + bytes(out)
-            llog(fd, 'resp_data: %s' % binascii.hexlify(resp_data))
+                llog(fd, 'status: %04x timing: %s' % (statuscode, time_bin))
+                resp_data = bytes([0, sw1, sw2]) + bytes(time_bin.to_bytes(2, 'big')) + bytes(out)
+                llog(fd, 'resp_data: %s' % binascii.hexlify(resp_data))
 
-            conn.send(resp_data)
+                conn.send(resp_data)
+
+        except KeyboardInterrupt:
+            break
 
         conn.close()
 
 
-def client_fuzzer(fd, lfd):
+def csock():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # pre-fork connection
+    s.connect((TCP_IP, TCP_PORT))
+    return s
+
+
+def client_fuzzer(fd, lfd, args=None, **kwargs):
     """
     Client AFL fuzzer. Executed by AFL, fed to STDIN.
     Communicates with the fuzzer server, reads response, changes SHM.
 
     :param fd:
+    :param lfd:
+    :param args:
     :return:
     """
     global stdin_compat
@@ -152,8 +173,10 @@ def client_fuzzer(fd, lfd):
 
     # Call our fuzzer
     try:
+        # s = csock()  # pre-fork connection
         while afl.loop(3):
             sys.settrace(None)
+            s = csock()
 
             buffer = stdin_compat.read()
             buffer = form_buffer(buffer)
@@ -161,8 +184,6 @@ def client_fuzzer(fd, lfd):
                 continue
 
             llog(fd, 'init4, buffer: %s' % binascii.hexlify(bytes(buffer)))
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((TCP_IP, TCP_PORT))
             s.send(bytes([0]) + bytes(buffer))
 
             resp = s.recv(BUFFER_SIZE)
@@ -188,16 +209,20 @@ def client_fuzzer(fd, lfd):
         traceback.print_exc(file=fd)
         fd.flush()
 
+    except KeyboardInterrupt:
+        return
+
     finally:
         fd.close()
         os._exit(0)
 
 
-def prefix_fuzzing(fd):
+def prefix_fuzzing(fd, lfd, args=None, **kwargs):
     """
     Original forking fuzzer with AFL without TCP binding
 
     :param fd:
+    :param args:
     :return:
     """
 
@@ -208,13 +233,13 @@ def prefix_fuzzing(fd):
     # card = connect_card(reader)
 
     llog(fd, 'init1')
-    # afl.init()
+    fwd = FileWriter(fd=lfd)
     sys.settrace(None)
     llog(fd, 'init2, in afl: %s' % in_afl)
 
     # Call our fuzzer
     try:
-        while afl.loop(3):
+        while afl.loop(3):  # afl.init()
             sys.settrace(None)
 
             buffer = stdin_compat.read()
@@ -223,19 +248,37 @@ def prefix_fuzzing(fd):
                 continue
 
             llog(fd, 'init4, buffer: %s' % binascii.hexlify(bytes(buffer)))
-            reader = get_reader()
-            card = connect_card(reader)
+            ln = int(buffer[4]) if len(buffer) >= 5 else 0
+            test_elem = FuzzerObject(int(buffer[0]), int(buffer[1]), int(buffer[2]),
+                                     int(buffer[3]), ln, list(bytearray(buffer[5:])))
 
-            data, sw1, sw2, timing = send_apdu(card, buffer, fd)
+            if args.dry:
+                elem = test_elem
+                sw1 = 0
+                sw2 = 0
+                out = bytes()
+
+            else:
+                card_interactor = CardInteractor(CARD_READER_ID)
+                llog(fd, 'reader: %s' % (card_interactor,))
+
+                elem = card_interactor.send_element(test_elem)
+                sw1 = elem.out['sw1']
+                sw2 = elem.out['sw2']
+                out = elem.out['data']
+
             statuscode = (sw1 << 8) + sw2
-            time_bin = int(timing * 100)
+            time_bin = int(test_elem.misc['timing'] // 10)
             if time_bin < 0:
                 time_bin = 0
 
-            llog(fd, 'status: %04x timing: %s orig %s' % (statuscode, time_bin, timing))
+            serialized_element = elem.serialize()
+            fwd.print_to_file("%s" % json.dumps(serialized_element))
+
+            llog(fd, 'status: %04x timing: %s' % (statuscode, time_bin))
             if in_afl:
                 afl.trace_buff(bytes([sw1, sw2]))
-                afl.trace_buff(bytes(data))
+                afl.trace_buff(bytes(out))
                 afl.trace_buff(time_bin.to_bytes(2, 'big'))
             os._exit(0)
 
@@ -270,6 +313,8 @@ def main():
                         help='Server mode')
     parser.add_argument('--client', dest='client', default=False, action='store_const', const=True,
                         help='client mode')
+    parser.add_argument('--dry', dest='dry', default=False, action='store_const', const=True,
+                        help='dry run - no card comm')
 
     args = parser.parse_args()
     INS_START = args.start_ins
@@ -285,11 +330,11 @@ def main():
 
     llog(fd, 'init0')
     if args.server:
-        server_fuzzer(fd, lfd)
+        server_fuzzer(fd, lfd, args)
     elif args.client:
-        client_fuzzer(fd, lfd)
+        client_fuzzer(fd, lfd, args)
     else:
-        prefix_fuzzing(fd)
+        prefix_fuzzing(fd, lfd, args)
 
     fd.close()
     lfd.close()
