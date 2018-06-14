@@ -229,11 +229,15 @@ class Templater(object):
 
             self.gen_h_len = sum([1 for i, x in enumerate(self.mask_b) if x > 0 and i < 4])
             self.inp_len = sum([1 for x in self.mask_b if x > 0])  # FF00 = generate first byte randomly, second is fix from the tpl
+            self.sample_len = self.inp_len
 
             if args.fix_len_b:
                 self.sample_len = args.fix_len_b + self.gen_h_len
                 self.inp_len_b = args.fix_len_b
                 self.inp_len_s = args.fix_len_s
+            else:
+                self.inp_len_b = self.sample_len - self.gen_h_len
+                self.inp_len_s = self.sample_len - self.gen_h_len
 
             if args.fix_len:
                 raise ValueError('Fix len is auto-determined from the mask')
