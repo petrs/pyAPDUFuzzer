@@ -5,10 +5,25 @@ from utils.const import ISO7816CODES
 
 class FuzzerInstruction:
 
-    def __init__(self, header=[0x00, 0x00, 0x00, 0x00, 0x00], data=[], mask=[(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)], follow_expert_rules=True):
+    def __init__(self, header=None, data=None, mask=None, follow_expert_rules=True, expert_rules=None):
+        if expert_rules is None:
+            expert_rules = []
+        if data is None:
+            data = []
+        if mask is None:
+            mask = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]
+        if header is None:
+            header = [0x00, 0x00, 0x00, 0x00, 0x00]
         self.header = header
         self.data = data
         self.mask = mask
+        self.num_of_tries = 1
+
+        for a in mask:
+            if (a[1]-a[0]) > 0:
+                self.num_of_tries *= a[1]-a[0]
+
+        self.expert_rules = expert_rules
         self.follow_expert_rules = follow_expert_rules
 
     def get_test_elements(self, pos):
@@ -22,14 +37,15 @@ class FuzzerInstruction:
     def get_follow_expert_rules(self):
         return self.follow_expert_rules
 
-
     def __str__(self):
         return "Instruction H: {} M: {} D: {}".format(str(self.header), str(self.mask), str(self.data))
 
 
 class FuzzerObject:
 
-    def __init__(self, cla=0x00, ins=0x00, p1=0x00, p2=0x00, dlen=0x00, data=[], follow_expert_rules=True):
+    def __init__(self, cla=0x00, ins=0x00, p1=0x00, p2=0x00, dlen=0x00, data=None, follow_expert_rules=True):
+        if data is None:
+            data = []
         self.inp = {}
         self.out = {}
         self.misc = {}
@@ -50,7 +66,9 @@ class FuzzerObject:
 
         self.follow_expert_rules = follow_expert_rules
 
-    def set_input(self, cla, ins, p1, p2, dlen=0, data=[]):
+    def set_input(self, cla, ins, p1, p2, dlen=0, data=None):
+        if data is None:
+            data = []
         self.inp['cla'] = cla
         self.inp['ins'] = ins
         self.inp['p1'] = p1
@@ -86,13 +104,15 @@ class FuzzerObject:
 
         ret["out"]['status'] = "0x{:04x}".format(status_code)
         ret["out"]['status_str'] = out_status_str
-        ret["out"]['data'] = ("0x" if len(ret["out"]['data']) > 0 else "") + "".join(["{:02x}".format(d) for d in ret["out"]['data']])
+        ret["out"]['data'] = ("0x" if len(ret["out"]['data']) > 0 else "") + "".join(
+            ["{:02x}".format(d) for d in ret["out"]['data']])
 
         ret["inp"] = self._convert_numbers_to_hex(ret["inp"])
         ret["out"] = self._convert_numbers_to_hex(ret["out"])
         return ret
 
-    def _convert_numbers_to_hex(self, arr):
+    @staticmethod
+    def _convert_numbers_to_hex(arr):
         for el in arr:
             if isinstance(arr[el], int):
                 arr[el] = "0x{:02x}".format(arr[el])
