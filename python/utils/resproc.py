@@ -59,4 +59,11 @@ def uniq(iterable, key=lambda x: x):
     # return [item[1] for item in sorted(reduce(append_unique, srt_enum, [srt_enum[0]]))]
 
 
+def merge_dicts(dicts):
+    dres = collections.OrderedDict()
+    for dc in dicts:
+        dres.update(dc)
+    return dres
+
+
 
