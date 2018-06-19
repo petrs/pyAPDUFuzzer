@@ -20,6 +20,8 @@ public class SimpleAPDU {
     private static final String MASK_NOMODIF_NONE = "0101010101"; // Allows for modification of any byte
     private static final String MASK_NOMODIF_INSLC = "0100010100"; // Prevents modification of INS and LC
     private static final String MASK_NOMODIF_CLAINSP1 = "0000000101"; // Prevents modification of INS and P1
+    private static final String MASK_NOMODIF_CLAINSP1P2 = "0000000001";
+    private static final String MASK_NOMODIF_CLAINSLC = "0000010100";
     
             
     public static void main(String[] args) {
@@ -53,8 +55,15 @@ public class SimpleAPDU {
         
         //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST, MASK_NOMODIF_NONE, null);
         //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST_INS16, MASK_NOMODIF_INSLC, null);
-        startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST_INS16P101, MASK_NOMODIF_CLAINSP1, null);
+        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST", STR_APDU_INS_TEST_INS16P101, MASK_NOMODIF_CLAINSP1, null);
         //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", STR_APDU_INS_TEST_INS3A, MASK_NOMODIF_INSLC, null);
+        
+        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", "0bd8104b00", MASK_NOMODIF_CLAINSP1P2, null);
+        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", "0bd800000100", MASK_NOMODIF_CLAINSLC, null);
+        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", "0be0010000", "0000000001", null);
+        //startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", "0be001001f", "0000000000", null);
+        startFuzzingTemplate(fuzzer, cardMngr, runCfg, "INS_TEST_NOINSLC", "0be25b5500", "0000000001", null);
+        
     }
     
     static void startFuzzingTemplate(APDUFuzzer fuzzer, CardManager cardMngr, RunConfig runCfg, String testName, String cmdTemplateStr, String cmdTemplateModifMaskStr, ArrayList<TestAPDU> initCommands) throws Exception {
