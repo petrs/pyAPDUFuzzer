@@ -9,11 +9,7 @@ def load_json(fname=None, fd=None, data=None):
     try:
         res = []
         data = data if data else fd.read()
-
-        for i, x in enumerate(data):
-            if x != '\x00':
-                data = data[i:]
-                break
+        data = remove_null_prefix(data)
 
         lines = data.split('\n')
         for line in lines:
@@ -28,6 +24,14 @@ def load_json(fname=None, fd=None, data=None):
     finally:
         if fname and not data:
             fd.close()
+
+
+def remove_null_prefix(data):
+    for i, x in enumerate(data):
+        if x != '\x00':
+            data = data[i:]
+            break
+    return data
 
 
 def uniq(iterable, key=lambda x: x):
