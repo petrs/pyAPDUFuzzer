@@ -4,7 +4,7 @@ import io
 from setuptools import setup
 from setuptools import find_packages
 
-version = '0.0.1'
+version = '0.0.2'
 
 install_requires = [
     'six',
@@ -20,24 +20,19 @@ afl_extras = [
 dev_extras = [
     'pep8',
     'tox',
-    'pandoc',
     'pypandoc',
     'jupyter',
 ]
 
 
-# try:
-#     import pypandoc
-#     long_description = pypandoc.convert('README.md', 'rst')
-#     long_description = long_description.replace("\r", '')
-#
-# except(IOError, ImportError):
-#     import io
-#     with io.open('README.md', encoding='utf-8') as f:
-#         long_description = f.read()
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+    long_description = long_description.replace("\r", '')
 
-
-with io.open('README.md', encoding='utf-8') as f:
+except Exception:  # (IOError, ImportError):
+    import io
+    with io.open('README.md', encoding='utf-8') as f:
         long_description = f.read()
 
 
