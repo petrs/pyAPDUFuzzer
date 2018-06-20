@@ -5,12 +5,12 @@ import os
 import time
 from queue import Queue
 
-from config import CARD_READER_ID
-from fuzzer.prefix_fuzzer import PrefixFuzzer
-from objects import FuzzerInstruction
-from utils.file_writer import FileWriter
-from utils.logging import init_logging
-from utils.util import auto_int
+from .config import CARD_READER_ID
+from .fuzzer.prefix_fuzzer import PrefixFuzzer
+from .objects import FuzzerInstruction
+from .utils.file_writer import FileWriter
+from .utils.logging import init_logging
+from .utils.util import auto_int
 
 
 def main():

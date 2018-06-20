@@ -5,9 +5,9 @@ from smartcard.sw.SWExceptions import SWException
 import time
 import sys
 
-from config import BLACKLIST
-from utils.logging import debug, info, warning, error
-from utils.util import raise_critical_error
+from ..config import BLACKLIST
+from .logging import debug, info, warning, error
+from .util import raise_critical_error
 
 
 class CardCrashedException(Exception):

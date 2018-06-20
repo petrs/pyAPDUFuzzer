@@ -1,6 +1,6 @@
 import copy
 
-from utils.const import ISO7816CODES
+from .utils.const import ISO7816CODES
 
 
 class FuzzerInstruction:

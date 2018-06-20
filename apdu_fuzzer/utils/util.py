@@ -1,6 +1,6 @@
 import sys
 
-from utils.logging import error
+from .logging import error
 
 
 def auto_int(x):

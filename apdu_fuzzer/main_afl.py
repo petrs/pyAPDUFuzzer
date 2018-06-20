@@ -14,13 +14,13 @@ import socket
 from six.moves import input
 from pyhashxx import hashxx
 
-from utils.card_interactor import CardInteractor
-from config import CARD_READER_ID
-from fuzzer.prefix_fuzzer import PrefixFuzzer
-from objects import FuzzerObject
-from utils.file_writer import FileWriter
-from utils.util import auto_int, raise_critical_error
-from utils.logging import init_logging, info, error
+from .utils.card_interactor import CardInteractor
+from .config import CARD_READER_ID
+from .fuzzer.prefix_fuzzer import PrefixFuzzer
+from .objects import FuzzerObject
+from .utils.file_writer import FileWriter
+from .utils.util import auto_int, raise_critical_error
+from .utils.logging import init_logging, info, error
 
 
 # logging.basicConfig(level=logging.DEBUG)

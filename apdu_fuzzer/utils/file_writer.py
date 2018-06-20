@@ -2,7 +2,7 @@ import os
 import json
 from threading import Lock
 
-from utils.logging import debug
+from .logging import debug
 
 
 class FileWriter:

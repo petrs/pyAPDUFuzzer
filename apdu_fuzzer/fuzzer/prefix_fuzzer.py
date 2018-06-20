@@ -2,11 +2,11 @@ import time
 import os
 from queue import Empty
 
-from config import EXPERT_RULES
-from objects import FuzzerObject, FuzzerInstruction
-from utils.card_interactor import CardInteractor, CardCrashedException
-from utils.logging import info, warning
-from utils.util import raise_critical_error
+from ..config import EXPERT_RULES
+from ..objects import FuzzerObject, FuzzerInstruction
+from ..utils.card_interactor import CardInteractor, CardCrashedException
+from ..utils.logging import info, warning
+from ..utils.util import raise_critical_error
 
 
 class PrefixFuzzer:
