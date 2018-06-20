@@ -68,4 +68,10 @@ setup(
         'dev': dev_extras,
         'afl': afl_extras,
     },
+    entry_points={
+        'console_scripts': [
+            'apdu-fuzz = apdu_fuzzer.main:main',
+            'apdu-afl-fuzz = apdu_fuzzer.main_afl:main',
+        ],
+    }
 )
