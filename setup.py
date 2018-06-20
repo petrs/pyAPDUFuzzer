@@ -22,6 +22,7 @@ dev_extras = [
     'tox',
     'pandoc',
     'pypandoc',
+    'jupyter',
 ]
 
 
