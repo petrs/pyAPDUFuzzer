@@ -1,4 +1,27 @@
 # Installation
+
+## Pip install
+
+```
+$> pip install apdu-fuzzer
+
+$> apdu-fuzz --help
+usage: apdu-fuzz [-h] [--start_ins START_INS] [--end_ins END_INS]
+                 [--output OUTPUT_FILE] [--no-trust]
+
+Fuzz smartcard api.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --start_ins START_INS
+                        Instruction to start fuzzing at
+  --end_ins END_INS     Instruction to stop fuzzing at
+  --output OUTPUT_FILE  File to output results to
+  --no-trust
+
+$> apdu-afl-fuzz --help
+```
+
 ## Installation on Debian based Linux
 For the fuzzer to work we need https://github.com/mit-ll/LL-Smartcard and its dependencies:
 
@@ -133,6 +156,25 @@ AFL with forking & TCP communication with the server:
 
 ```
 ../venv/bin/py-afl-fuzz -m 500 -t 5000 -o result/ -i inputs/ -- ../venv/bin/python main_afl.py --client --output ydat.json --log ylog.txt
+```
+
+## Local development
+
+The apdu_fuzzer package is using relative imports.
+For development and debugging in the local directory is thus required to
+load main package `apdu_fuzzer` first. Otherwise you get the following error:
+
+```
+Traceback (most recent call last):
+  File "../apdu_fuzzer/main_afl.py", line 17, in <module>
+    from .utils.card_interactor import CardInteractor
+ModuleNotFoundError: No module named '__main__.utils'; '__main__' is not a package
+```
+
+For the local execution use the wrappers in the main directory:
+
+```
+../venv/bin/python ../main_afl.py --help
 ```
 
 
