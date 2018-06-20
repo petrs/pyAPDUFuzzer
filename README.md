@@ -164,7 +164,9 @@ The apdu_fuzzer package is using relative imports.
 For development and debugging in the local directory is thus required to
 load main package `apdu_fuzzer` first. Otherwise you get the following error:
 
-```
+```bash
+$> ../venv/bin/python ../apdu_fuzzer/main_afl.py --help
+
 Traceback (most recent call last):
   File "../apdu_fuzzer/main_afl.py", line 17, in <module>
     from .utils.card_interactor import CardInteractor
@@ -173,8 +175,14 @@ ModuleNotFoundError: No module named '__main__.utils'; '__main__' is not a packa
 
 For the local execution use the wrappers in the main directory:
 
+```bash
+$> ../venv/bin/python ../main_afl.py --help
 ```
-../venv/bin/python ../main_afl.py --help
+
+OR you can use package import (limitation: relative import is not supported, so it has to be executed from the root of this repository)
+
+```bash
+$> ./venv/bin/python -m apdu_fuzzer.main_afl --help
 ```
 
 
