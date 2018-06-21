@@ -9,7 +9,7 @@ from .config import CARD_READER_ID
 from .fuzzer.prefix_fuzzer import PrefixFuzzer
 from .objects import FuzzerInstruction
 from .utils.file_writer import FileWriter
-from .utils.logging import init_logging
+from .utils.logging import init_logging, error
 from .utils.util import auto_int
 
 
@@ -23,6 +23,7 @@ def main():
                         default="result/{}-export.json".format(str(time.time()).replace(".", "")),
                         help='File to output results to')
     parser.add_argument('--no-trust', dest='trust_mode', action='store_false', default=True)
+    parser.add_argument('--class', dest='fixed_class', action='store', type=auto_int, default=-1)
     args = parser.parse_args()
 
     init_logging(logging.INFO)
@@ -35,10 +36,11 @@ def main():
     file_writer = FileWriter(args.output_file)
     prefix_fuzzer = PrefixFuzzer(card_reader=CARD_READER_ID, file_writer=file_writer, ins_start=args.start_ins,
                                  ins_end=args.end_ins, trust_mode=args.trust_mode, queue=Queue())
+    if args.fixed_class >= 0:
+        valid_classes = [args.fixed_class]
+    else:
+        valid_classes = prefix_fuzzer.get_classes()
 
-    valid_classes = prefix_fuzzer.get_classes()
-    #valid_classes = [0x0B]
-    #valid_classes = []
     for cla in valid_classes:
         header = [cla, 0x00, 0x00, 0x00, 0x00]
         mask = [(0, 0), (args.start_ins, args.end_ins), (0, 0), (0, 0), (0, 0)]

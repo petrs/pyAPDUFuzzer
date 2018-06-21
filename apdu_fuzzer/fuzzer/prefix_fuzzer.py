@@ -5,7 +5,7 @@ from queue import Empty
 from ..config import EXPERT_RULES
 from ..objects import FuzzerObject, FuzzerInstruction
 from ..utils.card_interactor import CardInteractor, CardCrashedException
-from ..utils.logging import info, warning
+from ..utils.logging import info, warning, error
 from ..utils.util import raise_critical_error
 
 
@@ -67,7 +67,8 @@ class PrefixFuzzer:
             try:
                 (sw1, sw2, data, timing) = self.card_interactor.send_apdu(apdu_to_send)
             except CardCrashedException as e:
-                raise_critical_error("card.interactor", e)
+                error("card.interactor", e)
+                break
             # unsupported class is 0x6E00
             if (sw1 == 0x6E) and (sw2 == 0x00):
                 continue
