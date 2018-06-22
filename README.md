@@ -209,6 +209,6 @@ PYTHON_AFL_PERSISTENT=1 ../venv/bin/py-afl-fuzz -m 200 -t 3000 -o result/ -i - -
 ```
 
 - Uses fixed APDU prefix `0be00100` as mask is zero on those bytes.
-- Generates payload of lengths `0x0x - 0x1f`.
+- Generates payload of lengths `0x0c - 0x1f`.
 
 [python-afl-ph4]: https://github.com/ph4r05/python-afl
