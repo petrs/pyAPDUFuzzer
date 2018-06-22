@@ -332,6 +332,7 @@ def client_fuzzer(fd, lfd, args=None, **kwargs):
         # s = csock()  # Pre-fork connection. needs more sophisticated reconnect if socket is broken.
         while afl.loop(3):
             sys.settrace(None)
+            stdin_compat.seek(0)
             buffer = stdin_compat.read()
             buffer = tpler.transform(buffer)
             if buffer is None:
