@@ -77,7 +77,7 @@
 (00-1f|80-9f|40-7f|c0-ff)2800(00-ff)<01-ff>(00-ff){L}
 (00-1f|80-9f|40-7f|c0-ff)2801(00-ff)
 
-# Disable Verificqtion Requirement
+# Disable Verification Requirement
 (00-1f|80-9f|40-7f|c0-ff)2601
 (00-1f|80-9f|40-7f|c0-ff)26(00|80-9f)<01-ff>(00-ff){L}
 

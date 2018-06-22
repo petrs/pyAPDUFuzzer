@@ -44,7 +44,7 @@ class CardInteractor:
                 if element.inp[key] not in blcklst[key]:
                     ok = True
             if not ok:
-                warning('fuzzer', 'Hit a blacklisted paket {}'.format(element.get_inp_data()))
+                warning('fuzzer', 'Hit a blacklisted packet {}'.format(element.get_inp_data()))
                 return True
 
         return False

@@ -22,7 +22,7 @@ c0c0000014
 # Manage Channel
 c070000100
 
-# Enveloppe 
+# Envelope
 c0c2000007c0a40000023f00
 
 # Get Data

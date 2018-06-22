@@ -187,7 +187,7 @@ def server_fuzzer(fd, lfd, args=None, **kwargs):
                 llog(fd, 'init4, buffer: %s' % binascii.hexlify(bytes(buffer)))
 
                 # data, sw1, sw2, timing = send_apdu(card, buffer, fd)
-                # data, sw1, sw2, timing = b'', 0, 0, b'0000'  # integration bechmark
+                # data, sw1, sw2, timing = b'', 0, 0, b'0000'  # integration benchmark
 
                 ln = int(buffer[4]) if len(buffer) >= 5 else 0
                 test_elem = FuzzerObject(int(buffer[0]), int(buffer[1]), int(buffer[2]),
