@@ -185,5 +185,17 @@ OR you can use package import (limitation: relative import is not supported, so 
 $> ./venv/bin/python -m apdu_fuzzer.main_afl --help
 ```
 
+## Example usage with templates
+
+Payload recovery for fixed command. Command header is fixed, payload is produced by AFL. Uses templating
+
+```bash
+PYTHON_AFL_PERSISTENT=1 ../venv/bin/py-afl-fuzz -m 200 -t 3000 -o result/ -i - -- \
+    ../venv/bin/apdu-afl-fuzz --client --output ydat3.json --log yres3.json \
+    --mask 00000000 --tpl 0be00100 --payload-len-b $((0x0c)) --payload-len-s $((0x1f))
+```
+
+- Uses fixed APDU prefix `0be00100` as mask is zero on those bytes.
+- Generates payload of lengths `0x0x - 0x1f`.
 
 [python-afl-ph4]: https://github.com/ph4r05/python-afl
