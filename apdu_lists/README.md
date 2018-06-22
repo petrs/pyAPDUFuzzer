@@ -17,7 +17,7 @@ The collected APDU commands may be written:
 * with regular expressions
 
 If so, the used format has a lot in common with the POSIX one:
-* __(__ and __)__ are delimiters to oser operators
+* __(__ and __)__ are delimiters to other operators
 * __|__ allows the choice between 2 or more options
 * __?__ matches the preceding element zero or one time
 * __{n}__ matches the preceding element exactly _n_ times
