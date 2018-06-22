@@ -133,8 +133,21 @@ afl.trace_offset(hashxx(timing))
 afl.trace_offset(hashxx(bytes(data)))
 ```
 
-Fowler-Noll-Vo hash function used in `afl.trace_buff` is not very good with respect to the zero buffers. The timing
+Fowler-Noll-Vo (FNV) hash function used in `afl.trace_buff` is not very good with respect to the zero buffers. The timing
 was usually not affecting the bitmap so we switched to very fast hash function `hashxx` for the offset computation.
+
+#### FNV collisions
+
+FNV is inappropriate for this use case as it returns the same hash for all buffers of the following format:
+`p | 0 | x` where `p` is a fixed prefix, `x` is random suffix.
+
+```python
+afl.hash32(bytes([0,1]))
+afl.hash32(bytes([0,2]))
+afl.hash32(bytes([0,255]))
+afl.hash32(bytes([0,255,255,255]))
+# 2166136261
+```
 
 ### Running
 
