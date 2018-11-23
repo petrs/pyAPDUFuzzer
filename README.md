@@ -42,6 +42,12 @@ brew install pcsc-lite
 pip install llsmartcard-ph4
 ```
 
+We as well need modified version of [python-afl-ph4]
+
+```
+pip install git+https://github.com/ph4r05/python-afl
+```
+
 ## Experimental installation with pip
 
 ```
@@ -165,10 +171,12 @@ echo -n '0000' | ../venv/bin/python main_afl.py --client --output ydat.json --lo
 cat ylog.txt
 ```
 
+(Note: this check does not work on macOS, due to the fact that client performs `stdin_compat.seek(0)`  but unnamed pipes are not seekable on macOS)
+
 AFL with forking & TCP communication with the server:
 
 ```
-../venv/bin/py-afl-fuzz -m 500 -t 5000 -o result/ -i inputs/ -- ../venv/bin/python main_afl.py --client --output ydat.json --log ylog.txt
+../venv/bin/py-afl-fuzz -m 500 -t 5000 -o result/ -i inputs/ -- ../venv/bin/python main_afl.py --client --output ydat.json --log ylog.txt --payload-len 4
 ```
 
 ## Local development
