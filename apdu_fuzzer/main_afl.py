@@ -112,9 +112,9 @@ def llog(fd=None, msg=None):
     fd.flush()
 
 
-def gen_input(len=4):
-    with open('inputs/zeros_%04d.bin' % len, 'wb') as fh:
-        fh.write(bytes([0]*len))
+def gen_input(length=4):
+    with open('inputs/zeros_%04d.bin' % length, 'wb') as fh:
+        fh.write(bytes([0]*length))
 
 
 def purge_inputs():
@@ -230,7 +230,7 @@ class Templater(object):
         self.sample_len = self.inp_len
         self.inp_len_b = self.inp_len or 0
         self.inp_len_s = self.inp_len or 0
-        self.gen_h_len = None
+        self.gen_h_len = 0
         self.tpl_b = None
         self.mask_b = None
 
