@@ -43,7 +43,7 @@ class SockComm(object):
     Simple socket communication wrapper for client-server comm.
     Supports SOCK_STREAM/SOCK_DGRAM
     """
-    
+
     def __init__(self, server=True):
         self.server = server
         self.s = None
