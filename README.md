@@ -1,78 +1,40 @@
 # Installation
 
-## Pip install
-
-```
-$> pip install apdu-fuzzer
-
-$> apdu-fuzz --help
-usage: apdu-fuzz [-h] [--start_ins START_INS] [--end_ins END_INS]
-                 [--output OUTPUT_FILE] [--no-trust]
-
-Fuzz smartcard api.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --start_ins START_INS
-                        Instruction to start fuzzing at
-  --end_ins END_INS     Instruction to stop fuzzing at
-  --output OUTPUT_FILE  File to output results to
-  --no-trust
-
-$> apdu-afl-fuzz --help
+## Installation script
+If you are using `Fedora`, `Ubuntu` or `macOS` you can use our installation
+script.  Just run following line in your terminal:
+``` shell
+curl -fsSL https://github.com/petrs/pyAPDUFuzzer/raw/master/install.sh | sudo bash
 ```
 
-## Installation on Debian based Linux
-For the fuzzer to work we need https://github.com/mit-ll/LL-Smartcard and its dependencies:
+## Manual installation
+If you want to install `pyAPDUFuzzer` manually, you will need following
+dependencies:
+- GCC
+- Python 3
+- Python 3 devel
+- pip3
+- SWIG
+- PCSC lite
+- PCSC lite devel
+- American fuzzy lop
 
-```
-git clone https://github.com/mit-ll/LL-Smartcard
-cd LL-Smartcard
-./install_dependencies.sh
-python2 setup.py install
-```
-
-## Installation on MacOS
-
-For the fuzzer to work we need https://github.com/mit-ll/LL-Smartcard and its dependencies:
-
-```
-brew install swig
-brew install pcsc-lite
-pip install llsmartcard-ph4
+Then install modified version of `python-afl`:
+``` shell
+pip3 install git+https://github.com/ph4r05/python-afl
 ```
 
-We as well need modified version of [python-afl-ph4]
-
+Finally, install latest version of `pyAPDUFuzzer` from GitHub:
+``` shell
+pip3 install git+https://github.com/petrs/pyAPDUFuzzer
 ```
-pip install git+https://github.com/ph4r05/python-afl
+
+Or use version from PyPI:
+``` shell
+pip3 install apdu-fuzzer
 ```
 
-## Experimental installation with pip
-
-```
-# Create virtual environment
-python -m venv --upgrade venv
-cd python
-
-# Install all project dependencies
-../venv/bin/pip install --find-links=. --no-cache .
-
-# Install AFL deps (cython required)
-# Mac:
-brew install afl-fuzz
-
-# Others:
-cd /tmp
-wget http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz
-tar -xzvf afl-latest.tgz
-cd afl-*
-make
-sudo make install
-
-# Install python dependencies
-../venv/bin/pip install --find-links=. --no-cache .[afl]
-```
+# Usage
 
 ## AFL fuzzing
 
