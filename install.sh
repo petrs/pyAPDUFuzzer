@@ -9,37 +9,65 @@ fi
 # exit when any command fails
 set -e
 
-# get distribution name
-DISTRO="$(awk -F= '/^NAME/{gsub(/"/,"",$2);print($2)}' /etc/os-release)"
+# get the kernel name
+KERNEL="$(uname)"
 
 # install required dependencies
-case $DISTRO in
-    Fedora)
-        dnf install -y \
-                git \
-                gcc \
-                python2 \
-                python3 \
-                python3-pip \
-                python3-devel \
-                swig \
-                pcsc-lite \
-                pcsc-lite-devel \
-                american-fuzzy-lop
+case $KERNEL in
+    Linux)
+        # get the distribution name
+        LINUX_DISTRO="$(awk -F= \
+                     '/^NAME/{gsub(/"/,"",$2);print($2)}' \
+                     /etc/os-release)"
+
+        case $LINUX_DISTRO in
+            Fedora)
+                dnf install -y \
+                    git \
+                    gcc \
+                    python3 \
+                    python3-devel \
+                    python3-pip \
+                    swig \
+                    pcsc-lite \
+                    pcsc-lite-devel \
+                    american-fuzzy-lop
+                ;;
+            Ubuntu)
+                apt-get update
+                apt-get install -y \
+                    git \
+                    gcc \
+                    python3 \
+                    python3-dev \
+                    python3-pip \
+                    swig \
+                    pcscd \
+                    libpcsclite-dev \
+                    afl
+                ;;
+            *)
+                echo 'Your Linux distribution is not currently supported.'
+                echo 'Try manual installation.'
+                exit 1
+                ;;
+        esac
         ;;
-    Ubuntu)
-        apt-get update
-        apt-get install -y \
-                git \
-                gcc \
-                python2.7 \
-                python3 \
-                python3-pip \
-                python3-dev \
-                swig \
-                pcscd \
-                libpcsclite-dev \
-                afl
+
+    Darwin)
+        brew update
+        brew install \
+            git \
+            gcc \
+            python3 \
+            swig \
+            pcsc-lite \
+            afl-fuzz
+        ;;
+    *)
+        echo 'Your operating system is not currently supported.'
+        echo 'Try manual installation.'
+        exit 1
         ;;
 esac
 
@@ -47,6 +75,5 @@ esac
 pip3 install git+https://github.com/ph4r05/python-afl
 
 # install pyAPDUFuzzer
-sudo -u "$SUDO_USER" git clone https://github.com/petrs/pyAPDUFuzzer.git
-cd pyAPDUFuzzer && python3 setup.py install && cd ..
+pip3 install git+https://github.com/petrs/pyAPDUFuzzer
 
