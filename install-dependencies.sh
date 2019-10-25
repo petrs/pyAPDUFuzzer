@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-# check if script is run with super-user privileges
-if [[ $EUID -ne 0 ]]; then
-    echo 'This script must be run as root!'
-    exit 1
-fi
-
 # exit when any command fails
 set -e
 
@@ -22,7 +16,7 @@ case $KERNEL in
 
         case $LINUX_DISTRO in
             Fedora)
-                dnf install -y \
+                sudo dnf install -y \
                     git \
                     gcc \
                     python3 \
@@ -34,13 +28,14 @@ case $KERNEL in
                     american-fuzzy-lop
                 ;;
             Ubuntu)
-                apt-get update
-                apt-get install -y \
+                sudo apt-get update
+                sudo apt-get install -y \
                     git \
                     gcc \
                     python3 \
                     python3-dev \
                     python3-pip \
+                    python3-setuptools \
                     swig \
                     pcscd \
                     libpcsclite-dev \
@@ -62,7 +57,8 @@ case $KERNEL in
             python3 \
             swig \
             pcsc-lite \
-            afl-fuzz
+            afl-fuzz \
+        || true
         ;;
     *)
         echo 'Your operating system is not currently supported.'
@@ -72,8 +68,5 @@ case $KERNEL in
 esac
 
 # install modified version of python-afl
-pip3 install git+https://github.com/ph4r05/python-afl
-
-# install pyAPDUFuzzer
-pip3 install git+https://github.com/petrs/pyAPDUFuzzer
+pip3 install --user git+https://github.com/ph4r05/python-afl
 

@@ -1,15 +1,8 @@
-# Installation
+# pyAPDUFuzzer
+A fuzzer for APDU-based smartcard interfaces
 
-## Installation script
-If you are using `Fedora`, `Ubuntu` or `macOS` you can use our installation
-script.  Just run following line in your terminal:
-``` shell
-curl -fsSL https://github.com/petrs/pyAPDUFuzzer/raw/master/install.sh | sudo bash
-```
-
-## Manual installation
-If you want to install `pyAPDUFuzzer` manually, you will need following
-dependencies:
+## Prerequisites
+If you want to install `pyAPDUFuzzer`, you will need following dependencies:
 - GCC
 - Python 3
 - Python 3 devel
@@ -19,11 +12,19 @@ dependencies:
 - PCSC lite devel
 - American fuzzy lop
 
-Then install modified version of `python-afl`:
+You will also need modified version of `python-afl`:
 ``` shell
 pip3 install git+https://github.com/ph4r05/python-afl
 ```
 
+### Installation script
+If you are using `Fedora`, `Ubuntu` or `macOS` you can use our script to
+install all required dependencies. Just run following line in your terminal:
+``` shell
+curl -fsSL https://github.com/petrs/pyAPDUFuzzer/raw/master/install-dependencies.sh | bash
+```
+
+## Installation
 Finally, install latest version of `pyAPDUFuzzer` from GitHub:
 ``` shell
 pip3 install git+https://github.com/petrs/pyAPDUFuzzer
@@ -34,9 +35,20 @@ Or use version from PyPI:
 pip3 install apdu-fuzzer
 ```
 
-# Usage
+### Local development
+For local development, clone this repository to your current working directory:
+``` shell
+git clone https://github.com/petrs/pyAPDUFuzzer.git
+```
 
-## AFL fuzzing
+Then install `pyAPDUFuzzer` in **editable** mode:
+``` shell
+cd pyAPDUFuzzer && pip3 install -e . && cd ..
+```
+
+## Usage
+
+### AFL fuzzing
 
 ```
 AFL <-> Client <-> Server <-> Card
@@ -117,7 +129,7 @@ afl.hash32(bytes([0,255,255,255]))
 # 2166136261
 ```
 
-### Running
+#### Running
 
 Start server sitting on the card:
 
@@ -141,34 +153,7 @@ AFL with forking & TCP communication with the server:
 ../venv/bin/py-afl-fuzz -m 500 -t 5000 -o result/ -i inputs/ -- ../venv/bin/python main_afl.py --client --output ydat.json --log ylog.txt --payload-len 4
 ```
 
-## Local development
-
-The apdu_fuzzer package is using relative imports.
-For development and debugging in the local directory is thus required to
-load main package `apdu_fuzzer` first. Otherwise you get the following error:
-
-```bash
-$> ../venv/bin/python ../apdu_fuzzer/main_afl.py --help
-
-Traceback (most recent call last):
-  File "../apdu_fuzzer/main_afl.py", line 17, in <module>
-    from .utils.card_interactor import CardInteractor
-ModuleNotFoundError: No module named '__main__.utils'; '__main__' is not a package
-```
-
-For the local execution use the wrappers in the main directory:
-
-```bash
-$> ../venv/bin/python ../main_afl.py --help
-```
-
-OR you can use package import (limitation: relative import is not supported, so it has to be executed from the root of this repository)
-
-```bash
-$> ./venv/bin/python -m apdu_fuzzer.main_afl --help
-```
-
-## Example usage with templates
+### Example usage with templates
 
 Payload recovery for fixed command. Command header is fixed, payload is produced by AFL. Uses templating
 
@@ -181,4 +166,3 @@ PYTHON_AFL_PERSISTENT=1 ../venv/bin/py-afl-fuzz -m 200 -t 3000 -o result/ -i - -
 - Uses fixed APDU prefix `0be00100` as mask is zero on those bytes.
 - Generates payload of lengths `0x0c - 0x1f`.
 
-[python-afl-ph4]: https://github.com/ph4r05/python-afl
