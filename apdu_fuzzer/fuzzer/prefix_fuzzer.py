@@ -77,7 +77,7 @@ class PrefixFuzzer:
         info("fuzzer", "Found %d valid command classes: " % len(valid_cla))
         if len(valid_cla) == 256:
             warning("fuzzer", "Class Checking seems to be disabled")
-            valid_cla = [0x0B]
+            valid_cla = [0xB0]
         else:
             for cla in valid_cla:
                 print("%s" % hex(cla))
@@ -116,4 +116,3 @@ class PrefixFuzzer:
             average = 0.00
 
         info("fuzzer", "Totaly processed {:.2f}% ({}/{}) in {:.2f} seconds. Average Speed for last 1000 Entries: {:.2f}".format((self.progress/self.total_elem_to_tries)*100, self.progress,self.total_elem_to_tries, (act_time - self.progress_history[0][0]), average))
-
