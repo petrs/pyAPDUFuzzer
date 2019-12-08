@@ -33,7 +33,7 @@ MODE_TRUST = True
 
 FD = None  # logging file descriptor
 SOCK_IP = '127.0.0.1'
-SOCK_PORT = 5005
+SOCK_PORT = 50000
 SOCK_TYPE = socket.SOCK_DGRAM  # SOCK_STREAM
 BUFFER_SIZE = 1024
 
@@ -159,7 +159,7 @@ def server_fuzzer(fd, lfd, args=None, **kwargs):
     llog(fd, 'Server mode...')
 
     if not args.dry:
-        card_interactor = CardInteractor(CARD_READER_ID)
+        card_interactor = CardInteractor(args.card_reader_id)
         llog(fd, 'reader: %s' % (card_interactor,))
 
     fwd = FileWriter(fd=lfd)
@@ -419,7 +419,7 @@ def prefix_fuzzing(fd, lfd, args=None, **kwargs):
                 out = bytes()
 
             else:
-                card_interactor = CardInteractor(CARD_READER_ID)
+                card_interactor = CardInteractor(args.card_reader_id)
                 llog(fd, 'reader: %s' % (card_interactor,))
 
                 elem = card_interactor.send_element(test_elem)
@@ -457,7 +457,7 @@ def auto_int(x):
 
 
 def main():
-    global INS_START, INS_END, FD
+    global INS_START, INS_END, FD, SOCK_PORT
     parser = argparse.ArgumentParser(description='Fuzz smartcard api.')
     parser.add_argument('--start_ins', dest='start_ins', action='store', type=auto_int,
                         default=0x00, help='Instruction to start fuzzing at')
@@ -488,11 +488,18 @@ def main():
     parser.add_argument('--mask', default=None,
                         help='Mask for the template')
 
+    parser.add_argument('--card_reader', metavar='ID', dest='card_reader_id', type=auto_int, default=CARD_READER_ID,
+                        help='Card reader ID')
+    parser.add_argument('--port', dest='port', type=auto_int, default=SOCK_PORT,
+                        help='Port for client-server communication')
+
     args = parser.parse_args()
     INS_START = args.start_ins
     INS_END = args.end_ins
     INS_START = 0
     INS_END = 56
+    SOCK_PORT = args.port
+
     try:
         os.mkdir("result")
     except:
