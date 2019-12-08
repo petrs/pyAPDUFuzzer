@@ -21,7 +21,7 @@ pip3 install git+https://github.com/ph4r05/python-afl
 If you are using `Fedora`, `Ubuntu` or `macOS` you can use our script to
 install all required dependencies. Just run following line in your terminal:
 ``` shell
-curl -fsSL https://github.com/petrs/pyAPDUFuzzer/raw/master/install-dependencies.sh | bash
+curl -fsSL https://github.com/petrs/pyAPDUFuzzer/raw/master/install-dependencies.sh | sh
 ```
 
 ## Installation
