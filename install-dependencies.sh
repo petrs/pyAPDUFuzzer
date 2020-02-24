@@ -41,6 +41,16 @@ case $KERNEL in
                     libpcsclite-dev \
                     afl
                 ;;
+            'Arch Linux')
+                yes | sudo pacman --needed -S \
+                    git \
+                    gcc \
+                    python3-pip \
+                    swig \
+                    ccid \
+                    opensc \
+                    afl
+                ;;
             *)
                 echo 'Your Linux distribution is not currently supported.'
                 echo 'Try manual installation.'
