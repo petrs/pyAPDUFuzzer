@@ -11,6 +11,7 @@ import argparse
 import traceback
 import psutil
 import socket
+import copy
 from six.moves import input
 from pyhashxx import hashxx
 import afl
@@ -33,7 +34,7 @@ MODE_TRUST = True
 
 FD = None  # logging file descriptor
 SOCK_IP = '127.0.0.1'
-SOCK_PORT = 5005
+SOCK_PORT = 50000
 SOCK_TYPE = socket.SOCK_DGRAM  # SOCK_STREAM
 BUFFER_SIZE = 1024
 
@@ -43,7 +44,7 @@ class SockComm(object):
     Simple socket communication wrapper for client-server comm.
     Supports SOCK_STREAM/SOCK_DGRAM
     """
-    
+
     def __init__(self, server=True):
         self.server = server
         self.s = None
@@ -159,7 +160,7 @@ def server_fuzzer(fd, lfd, args=None, **kwargs):
     llog(fd, 'Server mode...')
 
     if not args.dry:
-        card_interactor = CardInteractor(CARD_READER_ID)
+        card_interactor = CardInteractor(args.card_reader_id)
         llog(fd, 'reader: %s' % (card_interactor,))
 
     fwd = FileWriter(fd=lfd)
@@ -303,7 +304,7 @@ class Templater(object):
         return '<Templater: %s>' % self.__dict__
 
 
-def client_fuzzer(fd, lfd, args=None, **kwargs):
+def afl_fuzzer(fd, lfd, args=None, **kwargs):
     """
     Client AFL fuzzer. Executed by AFL, fed to STDIN.
     Communicates with the fuzzer server, reads response, changes SHM.
@@ -327,6 +328,7 @@ def client_fuzzer(fd, lfd, args=None, **kwargs):
     # by default, start with 4byte input - fuzz instruction with empty data
     tpler.gen_inputs()
 
+    # input_buffer = stdin_compat.read()
     # Call our fuzzer
     try:
         # s = csock()  # Pre-fork connection. needs more sophisticated reconnect if socket is broken.
@@ -335,6 +337,7 @@ def client_fuzzer(fd, lfd, args=None, **kwargs):
             stdin_compat.seek(0)
             buffer = stdin_compat.read()
             buffer = tpler.transform(buffer)
+            # buffer = tpler.transform(copy.copy(input_buffer))
             if buffer is None:
                 continue
 
@@ -373,6 +376,36 @@ def client_fuzzer(fd, lfd, args=None, **kwargs):
     finally:
         fd.close()
         os._exit(0)
+
+
+def glade_fuzzer(fd, lfd, args=None, **kwargs):
+    # Argument processing
+    tpler = Templater(args)
+    llog(fd, 'templater: %s' % tpler)
+
+    buffer = stdin_compat.read()
+    buffer = tpler.transform(buffer)
+    llog(fd, 'buffer: %s' % binascii.hexlify(bytes(buffer)))
+
+    s = SockComm(server=False)
+    s.connect()
+    s.send(bytes([0]) + bytes(buffer))
+
+    resp = s.read()
+    llog(fd, 'response: %s' % binascii.hexlify(resp))
+
+    sw1 = resp[1]
+    sw2 = resp[2]
+    timing = resp[3:5]
+    statuscode = (sw1 << 8) + sw2
+    llog(fd, 'status: %04x timing: %s' % (statuscode, timing))
+
+    if args.response_status == ("%04x" % statuscode):
+        llog(fd, 'exit code: 0\n')
+        os._exit(0)
+    else:
+        llog(fd, 'exit code: 1\n')
+        os._exit(1)
 
 
 def prefix_fuzzing(fd, lfd, args=None, **kwargs):
@@ -419,7 +452,7 @@ def prefix_fuzzing(fd, lfd, args=None, **kwargs):
                 out = bytes()
 
             else:
-                card_interactor = CardInteractor(CARD_READER_ID)
+                card_interactor = CardInteractor(args.card_reader_id)
                 llog(fd, 'reader: %s' % (card_interactor,))
 
                 elem = card_interactor.send_element(test_elem)
@@ -457,7 +490,7 @@ def auto_int(x):
 
 
 def main():
-    global INS_START, INS_END, FD
+    global INS_START, INS_END, FD, SOCK_PORT
     parser = argparse.ArgumentParser(description='Fuzz smartcard api.')
     parser.add_argument('--start_ins', dest='start_ins', action='store', type=auto_int,
                         default=0x00, help='Instruction to start fuzzing at')
@@ -471,8 +504,10 @@ def main():
                         help='File to output log to')
     parser.add_argument('--server', dest='server', default=False, action='store_const', const=True,
                         help='Server mode')
-    parser.add_argument('--client', dest='client', default=False, action='store_const', const=True,
-                        help='client mode')
+    parser.add_argument('--afl', dest='afl', default=False, action='store_const', const=True,
+                        help='AFL client mode')
+    parser.add_argument('--glade', dest='glade', default=False, action='store_const', const=True,
+                        help='GLADE client mode')
     parser.add_argument('--dry', dest='dry', default=False, action='store_const', const=True,
                         help='dry run - no card comm')
 
@@ -488,11 +523,21 @@ def main():
     parser.add_argument('--mask', default=None,
                         help='Mask for the template')
 
+    parser.add_argument('--card_reader', metavar='ID', dest='card_reader_id', type=auto_int, default=CARD_READER_ID,
+                        help='Card reader ID')
+    parser.add_argument('--port', dest='port', type=auto_int, default=SOCK_PORT,
+                        help='Port for client-server communication')
+
+    parser.add_argument('--response_status', metavar='HEX', dest='response_status', default=None,
+                        help='Expected response status')
+
     args = parser.parse_args()
     INS_START = args.start_ins
     INS_END = args.end_ins
     INS_START = 0
     INS_END = 56
+    SOCK_PORT = args.port
+
     try:
         os.mkdir("result")
     except:
@@ -504,8 +549,10 @@ def main():
     llog(fd, 'init0')
     if args.server:
         server_fuzzer(fd, lfd, args)
-    elif args.client:
-        client_fuzzer(fd, lfd, args)
+    elif args.afl:
+        afl_fuzzer(fd, lfd, args)
+    elif args.glade:
+        glade_fuzzer(fd, lfd, args)
     else:
         prefix_fuzzing(fd, lfd, args)
 

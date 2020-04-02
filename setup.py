@@ -65,8 +65,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'apdu-fuzz = apdu_fuzzer.main:main',
-            'apdu-afl-fuzz = apdu_fuzzer.main_afl:main',
+            'apdu-fuzz = apdu_fuzzer.main_fuzz:main',
+            'apdu-prefix-fuzz = apdu_fuzzer.main_prefix_fuzz:main',
+            'apdu-prefix-reduce = apdu_fuzzer.main_prefix_reduce:main',
         ],
     }
 )

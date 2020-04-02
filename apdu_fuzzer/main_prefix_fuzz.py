@@ -23,6 +23,8 @@ def main():
                         default="result/{}-export.json".format(str(time.time()).replace(".", "")),
                         help='File to output results to')
     parser.add_argument('--no-trust', dest='trust_mode', action='store_false', default=True)
+    parser.add_argument('--card_reader', metavar='ID', dest='card_reader_id', type=auto_int, default=CARD_READER_ID,
+                        help='Card reader ID')
     args = parser.parse_args()
 
     init_logging(logging.INFO)
@@ -33,7 +35,7 @@ def main():
         pass
 
     file_writer = FileWriter(args.output_file)
-    prefix_fuzzer = PrefixFuzzer(card_reader=CARD_READER_ID, file_writer=file_writer, ins_start=args.start_ins,
+    prefix_fuzzer = PrefixFuzzer(card_reader=args.card_reader_id, file_writer=file_writer, ins_start=args.start_ins,
                                  ins_end=args.end_ins, trust_mode=args.trust_mode, queue=Queue())
 
     valid_classes = prefix_fuzzer.get_classes()

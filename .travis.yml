@@ -1,0 +1,22 @@
+language: minimal
+
+os:
+  - linux
+  - osx
+
+dist: xenial
+
+install:
+  - bash install-dependencies.sh
+  - sudo pip3 install .
+
+jobs:
+  include:
+    - stage: Linting
+      language: python
+      install:
+        - pip3 install black flake8
+      script:
+        - black --check .
+        - flake8 --statistics
+
