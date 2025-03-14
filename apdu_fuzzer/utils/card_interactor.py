@@ -69,9 +69,9 @@ class CardInteractor:
         debug("card.interactor", stri)
         try:
 
-            start = time.time()
+            start = time.time_ns()
             (data, sw1, sw2) = self.card._send_apdu(data)
-            end = time.time()
+            end = time.time_ns()
             timing = end - start
         except SWException as e:
             # Did we get an unsuccessful attempt?
