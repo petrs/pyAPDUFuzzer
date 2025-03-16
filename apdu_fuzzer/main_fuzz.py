@@ -38,6 +38,8 @@ SOCK_PORT = 50000
 SOCK_TYPE = socket.SOCK_DGRAM  # SOCK_STREAM
 BUFFER_SIZE = 1024
 
+TIME_BYTES=6
+
 
 class SockComm(object):
     """
@@ -201,7 +203,7 @@ def server_fuzzer(fd, lfd, args=None, **kwargs):
                     out = elem.out['data']
 
                 statuscode = (sw1 << 8) + sw2
-                time_bin = int(test_elem.misc['timing'] // 10)
+                time_bin = int(test_elem.misc['timing'] // 1000)
                 if time_bin < 0:
                     time_bin = 0
 
@@ -209,7 +211,7 @@ def server_fuzzer(fd, lfd, args=None, **kwargs):
                 fwd.print_to_file("%s" % json.dumps(serialized_element))
 
                 llog(fd, 'status: %04x timing: %s' % (statuscode, time_bin))
-                resp_data = bytes([0, sw1, sw2]) + bytes(time_bin.to_bytes(2, 'big')) + bytes(out)
+                resp_data = bytes([0, sw1, sw2]) + bytes(time_bin.to_bytes(TIME_BYTES, 'big')) + bytes(out)
                 llog(fd, 'resp_data: %s' % binascii.hexlify(resp_data))
 
                 s.send(resp_data)
@@ -355,8 +357,8 @@ def afl_fuzzer(fd, lfd, args=None, **kwargs):
 
             sw1 = resp[1]
             sw2 = resp[2]
-            timing = resp[3:5]
-            data = resp[5:]
+            timing = resp[3:3+TIME_BYTES]
+            data = resp[3+TIME_BYTES:]
             statuscode = (sw1 << 8) + sw2
 
             llog(fd, 'status: %04x timing: %s' % (statuscode, timing))
@@ -396,7 +398,7 @@ def glade_fuzzer(fd, lfd, args=None, **kwargs):
 
     sw1 = resp[1]
     sw2 = resp[2]
-    timing = resp[3:5]
+    timing = resp[3:3+TIME_BYTES]
     statuscode = (sw1 << 8) + sw2
     llog(fd, 'status: %04x timing: %s' % (statuscode, timing))
 
@@ -471,7 +473,7 @@ def prefix_fuzzing(fd, lfd, args=None, **kwargs):
             llog(fd, 'status: %04x timing: %s' % (statuscode, time_bin))
             if in_afl:
                 afl.trace_offset(hashxx(bytes([sw1, sw2])))
-                afl.trace_offset(hashxx(bytes(time_bin.to_bytes(2, 'big'))))
+                afl.trace_offset(hashxx(bytes(time_bin.to_bytes(TIME_BYTES, 'big'))))
                 afl.trace_offset(hashxx(out))
             os._exit(0)
 
